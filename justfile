@@ -1,3 +1,5 @@
+set shell := ["powershell", "-Command"]
+
 TRUNK_CONFIG_FILE := if os() == "windows" { "Trunk.win.toml" } else { "Trunk.toml" }
 TRUNK_RELEASE_CONFIG_FILE := if os() == "windows" { "Trunk-release.win.toml" } else { "Trunk.toml" }
 
@@ -56,4 +58,3 @@ db-reset:
 # create a new database migration
 db-new-migration NAME:
     diesel migration generate {{ NAME }}
-

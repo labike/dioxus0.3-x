@@ -254,3 +254,7 @@ this, two changes need to be made:
    `#[nutype(validate(not_empty, ...))]`
 2. In all `impl` blocks where we create `fn formatted_error`, change
    `StructError::Missing` to `StructError::Empty`.
+
+### start error
+1. Error: Can't resolve 'tailwindcss' in 'E:\dioxus-x\frontend\src'
+> cd frontend && npm install tailwindcss
