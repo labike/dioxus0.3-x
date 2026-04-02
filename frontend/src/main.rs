@@ -27,3 +27,7 @@ fn main() {
     init_log();
     dioxus_web::launch(app::App)
 }
+
+mod prelude {
+    pub use crate::util::{async_handler, sync_handler};
+}
