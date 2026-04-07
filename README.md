@@ -1,13 +1,20 @@
-#### UseInput生命周期
-> Element和EventHandler不能活得比Scope时间更长, 因为Element和EventHandler依赖
-> Scope派生的状态
+#### 修复tailwind css样式未加载
+修改tailwind.config.js中content为
 ```
-// 'a 标记的是 Scope 的存活期
-cx: Scope<'a>  
-   │           // Scope 存活期间，以下派生数据才有效
-   ├──► Element<'a>        // 虚拟 DOM 节点，引用 Scope 中的数据
-   └──► EventHandler<'a>   // 事件闭包，捕获了 Scope 中的状态引用
+content: [
+    "./frontend/index.html",
+    "./frontend/src/**/*.{html,rs,scss}"
+],
 ```
 
-#### dioxus0.3中with_mut与with
-> with()不可变引用，只能读取/传递状态; with_mut()可变引用, 可以读取状态后进行修改
+windows中修改Trunk.win.toml为
+```
+  "npx --yes @tailwindcss/cli -i frontend/src/tailwind.css -o $TRUNK_STAGING_DIR/tailwind.css -m -c frontend/tailwind.config.js",
+```
+注意修改` $TRUNK_STAGING_DIR/tailwind.css`斜杠
+
+在tailwind css v4中只需导入
+```
+@import "tailwindcss";
+```
+一行即可
