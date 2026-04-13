@@ -1,9 +1,11 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
+use uchat_domain::UserFacingError;
 use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
-use crate::maybe_class;
+use crate::{fetch_json, maybe_class};
 use crate::prelude::*;
+use crate::util::ApiClient;
 
 pub struct PageState {
     username: UseState<String>,
@@ -79,17 +81,40 @@ pub fn PasswordInput<'a>(
 }
 
 pub fn Register(cx: Scope) -> Element {
+    let api_client = ApiClient::global();
     // let username = use_state(cx, String::new);
     // let password = use_state(cx, String::new);
 
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
 
+    let form_onsubmit = async_handler!(&cx, [api_client, page_state], move |_|
+        async move {
+            use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
+            let request_data = {
+                use uchat_domain::{Username, Password};
+                CreateUser {
+                    username: Username::try_new(page_state.with(
+                        |state| state.username.current().to_string())
+                    ).unwrap(),
+                    password: Password::try_new(page_state.with(
+                        |state| state.password.current().to_string())
+                    ).unwrap(),
+                }
+            };
+            let response = fetch_json!(<CreateUserOk>, api_client, request_data);
+            match response {
+                Ok(res) => (),
+                Err(e) => ()
+            }
+        }
+    );
+
     let username_oninput = sync_handler!(
         [page_state],
         move |ev: FormEvent| {
             if let Err(e) = uchat_domain::Username::try_new(&ev.value) {
-                page_state.with_mut(|state| state.form_errors.set("用户名错误", e.to_string()));
+                page_state.with_mut(|state| state.form_errors.set("用户名错误", e.formatted_error()));
             } else {
                 page_state.with_mut(|state| state.form_errors.remove("用户名错误"));
             };
@@ -101,7 +126,7 @@ pub fn Register(cx: Scope) -> Element {
         [page_state],
         move |ev: FormEvent| {
             if let Err(e) = uchat_domain::Password::try_new(&ev.value) {
-                page_state.with_mut(|state| state.form_errors.set("密码错误", e.to_string()));
+                page_state.with_mut(|state| state.form_errors.set("密码错误", e.formatted_error()));
             } else {
                 page_state.with_mut(|state| state.form_errors.remove("密码错误"));
             };
@@ -120,7 +145,7 @@ pub fn Register(cx: Scope) -> Element {
         form {
             class: "flex flex-col gap-5",
             prevent_default: "onsubmit",
-            onsubmit: move |_| {},
+            onsubmit: form_onsubmit,
 
             UsernameInput {
                 state: page_state.with(|state| state.username.clone()),
