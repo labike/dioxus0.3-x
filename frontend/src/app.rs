@@ -12,6 +12,10 @@ pub fn App(cx: Scope) -> Element {
             Route {
                 to: page::route::REGISTER,
                 page::Register {}
+            },
+            Route {
+                to: page::route::LOGIN,
+                page::Login {}
             }
         }
     })
