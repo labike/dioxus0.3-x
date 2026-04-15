@@ -41,3 +41,4 @@ uchat_cookie = { path = "../../shared/cookie" }
 uchat_crypto = { path = "../crypto" }
 uchat_query = { path = "../query" }
 uchat_endpoint = { path = "../../shared/endpoint" }
+uchat_domain = { path = "../../shared/domain" }

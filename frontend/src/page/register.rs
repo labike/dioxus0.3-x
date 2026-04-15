@@ -3,7 +3,7 @@
 use dioxus::prelude::*;
 use uchat_domain::UserFacingError;
 use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
-use crate::{fetch_json, maybe_class};
+use crate::{fetch_json, maybe_class, page};
 use crate::prelude::*;
 use crate::util::ApiClient;
 
@@ -88,7 +88,9 @@ pub fn Register(cx: Scope) -> Element {
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
 
-    let form_onsubmit = async_handler!(&cx, [api_client, page_state], move |_|
+    let router = use_router(&cx);
+
+    let form_onsubmit = async_handler!(&cx, [api_client, page_state, router], move |_|
         async move {
             use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
             let request_data = {
@@ -104,7 +106,15 @@ pub fn Register(cx: Scope) -> Element {
             };
             let response = fetch_json!(<CreateUserOk>, api_client, request_data);
             match response {
-                Ok(res) => (),
+                Ok(res) => {
+                    crate::util::cookie::set_session(
+                        res.session_signature,
+                        res.session_id,
+                        res.session_expires,
+                    );
+
+                    router.navigate_to(page::HOME)
+                },
                 Err(e) => ()
             }
         }
