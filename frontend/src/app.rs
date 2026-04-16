@@ -3,6 +3,7 @@
 use dioxus::prelude::*;
 use dioxus_router::{Route, Router};
 use fermi::use_init_atom_root;
+use crate::elements::Navbar;
 use crate::page;
 
 pub fn App(cx: Scope) -> Element {
@@ -20,7 +21,8 @@ pub fn App(cx: Scope) -> Element {
             Route {
                 to: page::route::HOME,
                 page::Home {}
-            }
+            },
+            Navbar {}
         }
     })
 }

@@ -4,6 +4,7 @@ extern crate diesel_derive_newtype;
 
 pub mod user;
 pub mod ids;
+pub mod post;
 
 pub use user::{Username, Password};
 
