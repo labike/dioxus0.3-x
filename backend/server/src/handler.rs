@@ -7,6 +7,7 @@ use crate::error::ApiResult;
 use crate::extractor::{DbConnection, UserSession};
 
 pub mod user;
+pub mod post;
 
 #[async_trait]
 pub trait PublicApiRequest {

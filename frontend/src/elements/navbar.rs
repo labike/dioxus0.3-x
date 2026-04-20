@@ -2,12 +2,13 @@
 
 use crate::prelude::*;
 use dioxus::prelude::*;
-use crate::maybe_class;
+use crate::{maybe_class, page};
 
 #[inline_props]
 pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
+    let router = use_router(cx);
     let hide_class = maybe_class!("hidden", *hide.get());
-    const BUTTON_CLASS: &str = "grid grid-cols-[20px-1fr gap-4 pl-4 justify-center items-center w-full h-12 border-y navbar-border-color";
+    const BUTTON_CLASS: &str = "flex grid grid-cols-[20px-1fr] gap-4 pl-4 justify-center items-center w-full h-12 border-y navbar-border-color";
 
     cx.render(rsx! {
         div {
@@ -18,8 +19,8 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
                 img {
                     class: "invert",
                     src: "/static/icon-poll.svg",
-                    "Poll"
-                }
+                },
+                span {"Poll"}
             },
             div {
                 class: BUTTON_CLASS,
@@ -27,17 +28,20 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
                 img {
                     class: "invert",
                     src: "/static/icons-image.svg",
-                    "Image"
-                }
+                },
+                span {"Image"}
             },
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| (),
+                onclick: move |_| {
+                    router.navigate_to(page::POST_NEW_CHAT);
+                    hide.set(true);
+                },
                 img {
                     class: "invert",
                     src: "/static/icon-messages.svg",
-                    "Chat"
-                }
+                },
+                span {"Chat"}
             }
         }
     })
@@ -82,7 +86,7 @@ pub fn Navbar(cx: Scope) -> Element {
 
     cx.render(rsx! {
         nav {
-            class: "max-w-[var(--content-max-width)] h-[var(-navbar-height)] fixed bottom-0 right-0 mx-auto border-t navbar-bg-color navbar-border-color",
+            class: "max-w-[var(--content-max-width)] h-[var(-navbar-height)] fixed bottom-0 left-0 right-0 mx-auto py-2 navbar-bg-color navbar-border-color",
             div {
                 class: "grid grid-cols-3 justify-around w-full h-full items-center shadow-inner",
                 NavButton {

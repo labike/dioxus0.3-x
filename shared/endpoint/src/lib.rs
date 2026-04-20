@@ -15,3 +15,18 @@ pub trait Endpoint {
 pub struct RequestFailed {
     pub msg: String,
 }
+
+macro_rules! route {
+    ($url:literal => $request_type:ty) => {
+        impl Endpoint for $request_type {
+            const URL: &'static str = $url;
+        }
+    }
+}
+
+// 公开路由
+route!("/account/login" => user::endpoint::Login);
+route!("/account/create" => user::endpoint::CreateUser);
+
+// 校验路由
+route!("/post/new" => post::endpoint::NewPost);

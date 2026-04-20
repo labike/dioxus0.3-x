@@ -3,16 +3,18 @@ use serde::{Deserialize, Serialize};
 use crate::UserFacingError;
 
 #[nutype(
-    validate(not_empty, len_char_min = 1, len_char_max = 30),
+    validate(len_char_max = 30),
     derive(AsRef, Clone, Debug, Serialize, Deserialize, PartialEq)
 )]
 pub struct Heading(String);
 
+impl Heading {
+    pub const MAX_CHARS: usize = 30;
+}
+
 impl UserFacingError for HeadingError {
     fn formatted_error(&self) -> &'static str {
         match self {
-            HeadingError::NotEmptyViolated => "Heading cannot be empty",
-            HeadingError::LenCharMinViolated => "Heading is too short, must be more than 1 chars",
             HeadingError::LenCharMaxViolated => "Heading is too long, must be less than 30 chars",
             _ => {""}
         }
@@ -34,4 +36,8 @@ impl UserFacingError for MessageError {
             _ => ""
         }
     }
+}
+
+impl Message {
+    pub const MAX_CHARS: usize = 100;
 }

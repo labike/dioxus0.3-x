@@ -30,6 +30,7 @@ fn generate_session(
 
     let mut rng = state.rng.clone();
     let signature = state.signing_keys.sign(&mut rng, session.id.as_uuid().as_bytes());
+    println!("signature={:?}", signature);
     let signature = uchat_crypto::encode_base64(signature);
     Ok((session , SessionSignature(signature), session_duration))
 }

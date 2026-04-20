@@ -74,11 +74,11 @@ where S: Send + Sync
 
         let signature = uchat_cookie::get_from_str(cookies, uchat_cookie::SESSION_SIGNATURE).and_then(
             |sign| {
-                uchat_crypto::decode_base64(&sign).ok()
+                uchat_crypto::decode_base64(sign).ok()
             }
         ).and_then(
             |sign| {
-                uchat_crypto::sign::signature_from_bytes(&sign).ok()
+                uchat_crypto::sign::signature_from_bytes(sign).ok()
             }
         ).ok_or_else(unauthorizated)?;
 

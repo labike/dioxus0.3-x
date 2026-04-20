@@ -28,9 +28,11 @@ pub fn set_session(signature: String, id: SessionId, expires: DateTime<Utc>) {
     document().set_cookie(&cookies).unwrap();
 
     let cookies = format_cookie(
-        format_kv(uchat_cookie::SESSION_ID, signature),
+        format_kv(uchat_cookie::SESSION_SIGNATURE, signature),
         expires,
     );
+    // fix: cookies not set signature bug
+    document().set_cookie(&cookies).unwrap();
 }
 
 #[cfg(not(debug_assertions))]
