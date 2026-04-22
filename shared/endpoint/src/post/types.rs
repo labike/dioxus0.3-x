@@ -60,3 +60,9 @@ pub struct PublicPost {
     pub dislikes: i64,
     pub boosts: i64,
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum BookmarkAction {
+    Add,
+    Remove
+}

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod user;
 pub mod post;
+pub mod trending;
 
 pub trait Endpoint {
     const URL: &'static str;
@@ -30,3 +31,5 @@ route!("/account/create" => user::endpoint::CreateUser);
 
 // 校验路由
 route!("/post/new" => post::endpoint::NewPost);
+route!("/posts/bookmark" => post::endpoint::Bookmark);
+route!("/posts/trending" => trending::endpoint::TrendingPosts);

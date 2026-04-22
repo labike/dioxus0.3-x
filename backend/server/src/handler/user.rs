@@ -1,18 +1,35 @@
 use axum::http::StatusCode;
 use axum::{async_trait, Json};
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use tracing::info;
+use url::Url;
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk};
 use uchat_query::session::Session;
-use uchat_query::user::get_password_hash;
+use uchat_query::user::{get_password_hash, User};
 use crate::AppState;
-use crate::extractor::DbConnection;
+use crate::extractor::{DbConnection, UserSession};
 use crate::handler::PublicApiRequest;
 use uchat_domain::ids::UserId;
+use uchat_domain::user::DisplayName;
+use uchat_endpoint::post::types::PublicPost;
+use uchat_endpoint::user::types::PublicUserProfile;
+use uchat_query::AsyncConnection;
+use uchat_query::post::Post;
 use crate::error::ApiResult;
 
 #[derive(Clone)]
 pub struct SessionSignature(String);
+
+pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
+    Ok(PublicUserProfile {
+        id: user.id,
+        display_name: user.display_name.and_then(|name| DisplayName::try_new(name).ok()),
+        handle: user.handle,
+        profile_image: None,
+        created_at: user.created_at,
+        am_following: false,
+    })
+}
 
 fn generate_session(
     conn: &mut uchat_query::AsyncConnection,
