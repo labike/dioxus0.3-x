@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uchat_domain::ids::PostId;
 use crate::Endpoint;
-use crate::post::types::{BookmarkAction, Content, LikeStatus, NewPostOptions};
+use crate::post::types::{BookmarkAction, BootsAction, Content, LikeStatus, NewPostOptions};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct NewPost {
@@ -29,14 +29,14 @@ pub struct BookmarkOk {
     pub status: BookmarkAction,
 }
 
-impl From<BookmarkAction> for bool {
-    fn from(value: BookmarkAction) -> Self {
-        match value {
-            BookmarkAction::Add => true,
-            BookmarkAction::Remove => false,
-        }
-    }
-}
+// impl From<BookmarkAction> for bool {
+//     fn from(value: BookmarkAction) -> Self {
+//         match value {
+//             BookmarkAction::Add => true,
+//             BookmarkAction::Remove => false,
+//         }
+//     }
+// }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct React {
@@ -49,4 +49,15 @@ pub struct ReactOk {
     pub like_status: LikeStatus,
     pub likes: i64,
     pub dislikes: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct Boost {
+    pub post_id: PostId,
+    pub action: BootsAction,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct BoostOk {
+    pub status: BootsAction,
 }

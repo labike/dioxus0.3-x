@@ -66,3 +66,27 @@ pub enum BookmarkAction {
     Add,
     Remove
 }
+
+impl From<BookmarkAction> for bool {
+    fn from(value: BookmarkAction) -> Self {
+        match value {
+            BookmarkAction::Add => true,
+            BookmarkAction::Remove => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum BootsAction {
+    Add,
+    Remove
+}
+
+impl From<BootsAction> for bool {
+    fn from(value: BootsAction) -> Self {
+        match value {
+            BootsAction::Add => true,
+            BootsAction::Remove => false,
+        }
+    }
+}

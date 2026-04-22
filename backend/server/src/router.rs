@@ -9,7 +9,7 @@ use tower_http::LatencyUnit;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uchat_endpoint::Endpoint;
-use uchat_endpoint::post::endpoint::{Bookmark, NewPost, NewPostOk, React};
+use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React};
 use uchat_endpoint::trending::endpoint::TrendingPosts;
 use uchat_endpoint::user::endpoint::{CreateUser, Login, LoginOk};
 use crate::AppState;
@@ -24,7 +24,8 @@ pub fn new_router(state: AppState) -> axum::Router {
         .route(NewPost::URL, post(with_handler::<NewPost>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
-        .route(React::URL, post(with_handler::<React>));
+        .route(React::URL, post(with_handler::<React>))
+        .route(Boost::URL, post(with_handler::<Boost>));
 
     Router::new()
         .merge(public_routes)

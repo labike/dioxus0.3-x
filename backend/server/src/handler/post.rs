@@ -7,13 +7,13 @@ use uchat_domain::Username;
 use crate::AppState;
 use crate::extractor::{DbConnection, UserSession};
 use crate::handler::AuthorizatedApiRequest;
-use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, React, ReactOk};
-use uchat_endpoint::post::types::{BookmarkAction, Content, LikeStatus, PublicPost};
+use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk};
+use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, LikeStatus, PublicPost};
 use uchat_endpoint::RequestFailed;
 use uchat_endpoint::trending::endpoint::{TrendingPostOk, TrendingPosts};
 use uchat_endpoint::user::types::PublicUserProfile;
 use uchat_query::AsyncConnection;
-use uchat_query::post::Post;
+use uchat_query::post::{delete_boosts, Post};
 use crate::error::{ApiError, ApiResult};
 
 
@@ -71,7 +71,14 @@ pub fn to_public(
                     None => false
                 }
             },
-            boosted: false,
+            boosted: {
+                match session {
+                    Some(session) => {
+                        query_post::get_boosts(conn,  session.user_id, post.id)?
+                    }
+                    None => false
+                }
+            },
             likes: aggregate_reactions.likes,
             dislikes: aggregate_reactions.dislikes,
             boosts: aggregate_reactions.boosts,
@@ -209,6 +216,36 @@ impl AuthorizatedApiRequest for React {
                 like_status: self.like_status,
                 likes: aggregate_reactions.likes,
                 dislikes: aggregate_reactions.dislikes
+            })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for Boost {
+    type Response = (StatusCode, Json<BoostOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            BootsAction::Add => {
+                use uchat_query::post::boost;
+                boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
+            }
+            BootsAction::Remove => {
+                use uchat_query::post::delete_bookmark;
+                delete_boosts(&mut conn, session.user_id, self.post_id)?;
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(BoostOk {
+                status: self.action,
             })
         ))
     }

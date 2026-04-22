@@ -3,8 +3,8 @@
 use crate::prelude::*;
 use dioxus::prelude::*;
 use uchat_domain::ids::PostId;
-use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, React, ReactOk};
-use uchat_endpoint::post::types::{BookmarkAction, LikeStatus};
+use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, React, ReactOk};
+use uchat_endpoint::post::types::{BookmarkAction, BootsAction, LikeStatus};
 use crate::fetch_json;
 use crate::util::ApiClient;
 
@@ -18,6 +18,11 @@ pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
     cx.render(rsx! {
         div {
             class: "flex flex-row justify-between w-full opacity-70 mt-4",
+            Boost {
+                post_id: this_post_id,
+                boosts: this_post.boosts,
+                boosted: this_post.boosted
+            },
             Bookmark {
                 bookmarked: this_post.bookmarked,
                 post_id: this_post_id,
@@ -161,6 +166,66 @@ pub fn LikeDislike(
             div {
                 class: "text-center",
                 "{dislikes}"
+            }
+        }
+    })
+}
+
+#[inline_props]
+pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element {
+    let post_manager = use_post_manager(cx);
+    let toaster = use_toaster(cx);
+    let api_client = ApiClient::global();
+
+    let icon = match boosted {
+        true => "/static/icons/icon-boosted.svg",
+        false => "/static/icons/icon-boost.svg",
+    };
+
+    let boost_onclick = async_handler!(
+        &cx,
+        [api_client, post_manager, toaster, post_id],
+        move |_| async move {
+            let action = match post_manager.read().get(&post_id).unwrap().boosted {
+                true => BootsAction::Remove,
+                false => BootsAction::Add,
+            };
+
+            let request_data = Boost {
+                action,
+                post_id
+            };
+
+            match fetch_json!(<BoostOk>, api_client, request_data) {
+                Ok(res) => {
+                    post_manager.write().update(post_id, |post| {
+                        post.boosted = res.status.into();
+                        if post.boosted {
+                            post.boosts += 1;
+                        } else {
+                            post.boosts -= 1;
+                        }
+                    });
+                }
+                Err(e) => toaster.write().error(
+                    format!("Failed to boosts post: {}", e),
+                    chrono::Duration::seconds(3),
+                )
+            }
+        }
+    );
+
+    cx.render(rsx! {
+        div {
+            class: "cursor-pointer",
+            onclick: boost_onclick,
+            img {
+                class: "actionbar-icon",
+                src: "{icon}"
+            }
+            div {
+                class: "text-center",
+                "{boosts}"
             }
         }
     })
