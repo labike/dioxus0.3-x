@@ -32,4 +32,5 @@ route!("/account/create" => user::endpoint::CreateUser);
 // 校验路由
 route!("/post/new" => post::endpoint::NewPost);
 route!("/posts/bookmark" => post::endpoint::Bookmark);
+route!("/posts/react" => post::endpoint::React);
 route!("/posts/trending" => trending::endpoint::TrendingPosts);

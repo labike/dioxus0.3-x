@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use uchat_domain::ids::{PostId, UserId};
 use crate::{schema, DieselError};
+use crate::schema::reactions::dsl::reactions;
+use crate::schema::reactions::like_status;
 
 #[derive(Clone, Debug, DieselNewType, Serialize, Deserialize)]
 pub struct Content(pub serde_json::Value);
@@ -120,4 +122,89 @@ pub fn get_bookmark(conn: &mut PgConnection, user_id: UserId, post_id: PostId) -
                 None => false
             })
     }
+}
+
+#[derive(Clone, Debug, DieselNewType, Deserialize, Serialize)]
+pub struct ReactionData(serde_json::Value);
+
+#[derive(Clone, Debug, Queryable, Insertable, Deserialize, Serialize)]
+#[diesel(table_name = schema::reactions)]
+pub struct Reaction {
+    pub user_id: UserId,
+    pub post_id: PostId,
+    pub created_at: DateTime<Utc>,
+    pub like_status: i16,
+    pub reaction: Option<ReactionData>,
+}
+
+pub fn react(
+    conn: &mut PgConnection,
+    reaction: Reaction
+) -> Result<(), DieselError> {
+    use crate::schema::reactions;
+
+    diesel::insert_into(reactions::table)
+        .values(&reaction)
+        .on_conflict((reactions::user_id, reactions::post_id))
+        .do_update()
+        .set(
+            (
+                reactions::like_status.eq(&reaction.like_status),
+                reactions::reaction.eq(&reaction.reaction),
+            )
+        ).execute(conn).map(|_| ()
+    )
+}
+
+pub fn get_reaction(
+    conn: &mut PgConnection,
+    post_id: PostId,
+    user_id: UserId,
+) -> Result<Option<Reaction>, DieselError> {
+    let pid = post_id;
+    let uid = user_id;
+
+    {
+        use crate::schema::reactions::dsl::*;
+
+        reactions.filter(post_id.eq(pid)).filter(user_id.eq(uid)).get_result(conn).optional()
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AggregatePostInfo {
+    pub post_id: PostId,
+    pub likes: i64,
+    pub dislikes: i64,
+    pub boosts: i64,
+}
+
+pub fn aggregate_reactions(
+    conn: &mut PgConnection,
+    post_id: PostId
+) -> Result<AggregatePostInfo, DieselError> {
+    let pid = post_id;
+
+    let (likes, dislikes) = {
+        use crate::schema::reactions::dsl::*;
+
+        let likes = reactions.filter(post_id.eq(pid)).filter(like_status.eq(1)).count().get_result(conn)?;
+
+        let dislikes = reactions.filter(post_id.eq(pid)).filter(like_status.eq(-1)).count().get_result(conn)?;
+
+        (likes, dislikes)
+    };
+
+    let boosts = {
+        use crate::schema::boosts::dsl::*;
+
+        boosts.filter(post_id.eq(pid)).count().get_result(conn)?
+    };
+
+    Ok(AggregatePostInfo {
+        post_id: pid,
+        likes,
+        dislikes,
+        boosts
+    })
 }

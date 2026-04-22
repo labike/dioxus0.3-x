@@ -7,7 +7,7 @@ use uchat_domain::Username;
 use crate::AppState;
 use crate::extractor::{DbConnection, UserSession};
 use crate::handler::AuthorizatedApiRequest;
-use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk};
+use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, React, ReactOk};
 use uchat_endpoint::post::types::{BookmarkAction, Content, LikeStatus, PublicPost};
 use uchat_endpoint::RequestFailed;
 use uchat_endpoint::trending::endpoint::{TrendingPostOk, TrendingPosts};
@@ -27,6 +27,8 @@ pub fn to_public(
     use uchat_query::user as query_user;
 
     if let Ok(mut content) = serde_json::from_value(post.content.0) {
+        let aggregate_reactions = query_post::aggregate_reactions(conn, post.id)?;
+
         Ok(PublicPost {
             id: post.id,
             by_user: {
@@ -49,7 +51,18 @@ pub fn to_public(
                     None => None,
                 }
             },
-            like_status: LikeStatus::NoReaction,
+            like_status: {
+                match session {
+                    Some(session) => {
+                        match query_post::get_reaction(conn, post.id, session.user_id)? {
+                            Some(reaction) if reaction.like_status == -1 => LikeStatus::Dislike,
+                            Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
+                            _ => LikeStatus::NoReaction,
+                        }
+                    },
+                    _ => LikeStatus::NoReaction,
+                }
+            },
             bookmarked: {
                 match session {
                     Some(session) => {
@@ -59,9 +72,9 @@ pub fn to_public(
                 }
             },
             boosted: false,
-            likes: 0,
-            dislikes: 0,
-            boosts: 0,
+            likes: aggregate_reactions.likes,
+            dislikes: aggregate_reactions.dislikes,
+            boosts: aggregate_reactions.boosts,
         })
     } else {
         Err(ApiError {
@@ -154,6 +167,48 @@ impl AuthorizatedApiRequest for Bookmark {
             StatusCode::OK,
             Json(BookmarkOk {
                 status: self.action,
+            })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for React {
+    type Response = (StatusCode, Json<ReactOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+        use uchat_endpoint::post::types::LikeStatus;
+
+        let reaction = uchat_query::post::Reaction {
+            post_id: self.post_id,
+            user_id: session.user_id,
+            reaction: None,
+            like_status: match self.like_status {
+                LikeStatus::Like => 1,
+                LikeStatus::Dislike => -1,
+                LikeStatus::NoReaction => 0
+            },
+            created_at: Utc::now(),
+        };
+
+        uchat_query::post::react(
+            &mut conn,
+            reaction,
+        )?;
+        let aggregate_reactions = query_post::aggregate_reactions(&mut conn, self.post_id)?;
+
+        Ok((
+            StatusCode::OK,
+            Json(ReactOk {
+                like_status: self.like_status,
+                likes: aggregate_reactions.likes,
+                dislikes: aggregate_reactions.dislikes
             })
         ))
     }
