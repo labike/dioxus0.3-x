@@ -33,9 +33,9 @@ doc *ARGS:
 serve-frontend *ARGS:
     trunk --config {{TRUNK_CONFIG_FILE}} serve {{ ARGS }}
 
-# run API server
+# run API server (watchexec -r -i "frontend/**" -i "target/**" --exts rs,sql,toml -- )
 serve-api *ARGS:
-    watchexec -r -i "frontend/**" -i "target/**" --exts rs,sql,toml cargo run -p uchat_server {{ ARGS }}
+    cargo run -p uchat_server {{ ARGS }}
 
 # set up project dependencies
 init:

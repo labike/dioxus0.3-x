@@ -12,6 +12,7 @@ use crate::elements::post::content::Content;
 
 pub mod content;
 pub mod action_bar;
+pub mod quick_respond;
 
 pub fn use_post_manager(cx: &ScopeState) -> &UseAtomRef<PostManager> {
     use_atom_ref(cx, crate::app::POSTMANAGER)

@@ -5,8 +5,22 @@ use dioxus::prelude::*;
 use uchat_domain::ids::PostId;
 use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, React, ReactOk};
 use uchat_endpoint::post::types::{BookmarkAction, BootsAction, LikeStatus};
+use crate::elements::post::quick_respond::QuickRespond;
 use crate::fetch_json;
 use crate::util::ApiClient;
+
+#[inline_props]
+pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> Element {
+    let element = match *opened.get() {
+        true => {
+            to_owned![opened, post_id];
+            Some(rsx! { QuickRespond {post_id: post_id, opened: opened} })
+        }
+        false => None,
+    };
+
+    cx.render(rsx! { element })
+}
 
 #[inline_props]
 pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
@@ -14,6 +28,7 @@ pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
     let this_post = post_manager.read();
     let this_post = this_post.get(&post_id).unwrap();
     let this_post_id = this_post.id;
+    let quick_respond_opened = use_state(cx, || false).clone();
 
     cx.render(rsx! {
         div {
@@ -32,7 +47,15 @@ pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
                 likes: this_post.likes,
                 dislikes: this_post.dislikes,
                 like_status: this_post.like_status,
+            },
+            Comment {
+                opened: quick_respond_opened.clone()
             }
+        }
+
+        QuickRespondBox {
+            post_id: this_post_id,
+            opened: quick_respond_opened
         }
     })
 }
@@ -226,6 +249,25 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
             div {
                 class: "text-center",
                 "{boosts}"
+            }
+        }
+    })
+}
+
+#[inline_props]
+pub fn Comment(cx: Scope, opened: UseState<bool>) -> Element {
+    let comment_onclick = sync_handler!([opened], move |_| {
+        let current = *opened.get();
+        opened.set(!current);
+    });
+
+    cx.render(rsx! {
+        div {
+            class: "cursor-pointer",
+            onclick: comment_onclick,
+            img {
+                class: "actionbar-icon",
+                src: "/static/icons/icon-messages.svg"
             }
         }
     })
