@@ -1,3 +1,4 @@
+use axum::extract::DefaultBodyLimit;
 use axum::http::HeaderValue;
 use axum::Router;
 use axum::routing::{get, post};
@@ -6,18 +7,24 @@ use hyper::Method;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tower_http::LatencyUnit;
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uchat_endpoint::Endpoint;
 use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React};
 use uchat_endpoint::trending::endpoint::TrendingPosts;
 use uchat_endpoint::user::endpoint::{CreateUser, Login, LoginOk};
-use crate::AppState;
+use crate::{handler, AppState};
 use crate::handler::{with_handler, with_public_handler};
 
 pub fn new_router(state: AppState) -> axum::Router {
+    let img_route = {
+        use uchat_endpoint::app_url::user_content;
+        format!("{}{}", user_content::ROOT, user_content::IMAGES)
+    };
     let public_routes = Router::new()
         .route("/", get(|| async { "this is the root page!" }))
+        .route(&format!("/{img_route}:id"), get(handler::load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
     let authorized_routes = Router::new()
@@ -25,7 +32,9 @@ pub fn new_router(state: AppState) -> axum::Router {
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(React::URL, post(with_handler::<React>))
-        .route(Boost::URL, post(with_handler::<Boost>));
+        .route(Boost::URL, post(with_handler::<Boost>))
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(8 * 1024 * 1024));
 
     Router::new()
         .merge(public_routes)

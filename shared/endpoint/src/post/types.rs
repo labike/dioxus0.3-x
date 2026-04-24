@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uchat_domain::ids::{PostId, UserId};
-use uchat_domain::post::{Message, Heading};
+use url::Url;
+use uchat_domain::ids::{ImageId, PostId, UserId};
+use uchat_domain::post::{Message, Heading, Caption};
 use uchat_domain::Username;
 use crate::user::types::PublicUserProfile;
 
@@ -20,6 +21,7 @@ impl From<Chat> for Content {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Content {
     Chat(Chat),
+    Image(Image),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -88,5 +90,24 @@ impl From<BootsAction> for bool {
             BootsAction::Add => true,
             BootsAction::Remove => false,
         }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum ImageKind {
+    DataUrl(String),
+    Id(ImageId),
+    Url(Url)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Image {
+    pub kind: ImageKind,
+    pub caption: Option<Caption>
+}
+
+impl From<Image> for Content {
+    fn from(value: Image) -> Self {
+        Content::Image(value)
     }
 }

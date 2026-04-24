@@ -2,14 +2,15 @@ use axum::http::StatusCode;
 use axum::{async_trait, Json};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uchat_domain::ids::{PostId, UserId};
+use uchat_domain::ids::{ImageId, PostId, UserId};
 use uchat_domain::Username;
 use crate::AppState;
 use crate::extractor::{DbConnection, UserSession};
-use crate::handler::AuthorizatedApiRequest;
+use crate::handler::{save_image, AuthorizatedApiRequest};
 use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk};
-use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, LikeStatus, PublicPost};
-use uchat_endpoint::RequestFailed;
+use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, ImageKind, LikeStatus, PublicPost};
+use uchat_endpoint::{app_url, RequestFailed};
+use uchat_endpoint::app_url::user_content;
 use uchat_endpoint::trending::endpoint::{TrendingPostOk, TrendingPosts};
 use uchat_endpoint::user::types::PublicUserProfile;
 use uchat_query::AsyncConnection;
@@ -25,8 +26,22 @@ pub fn to_public(
 ) -> ApiResult<PublicPost> {
     use uchat_query::post as query_post;
     use uchat_query::user as query_user;
-
+    use uchat_endpoint::post::types::Content;
+    
     if let Ok(mut content) = serde_json::from_value(post.content.0) {
+        match content {
+            Content::Image(ref mut image) => {
+                if let ImageKind::Id(id) = image.kind {
+                    let url = app_url::domain_and(user_content::ROOT)
+                        .join(user_content::IMAGES)
+                        .unwrap()
+                        .join(&id.to_string())
+                        .unwrap();
+                    image.kind = ImageKind::Url(url);
+                }
+            }
+            _ => ()
+        }
         let aggregate_reactions = query_post::aggregate_reactions(conn, post.id)?;
 
         Ok(PublicPost {
@@ -103,9 +118,18 @@ impl AuthorizatedApiRequest for NewPost {
         session: UserSession,
         state: AppState,
     ) -> ApiResult<Self::Response> {
+        let mut content = self.content;
+        if let Content::Image(ref mut img) = content {
+            if let ImageKind::DataUrl(data) = &img.kind {
+                let id = ImageId::new();
+                save_image(id, &data).await?;
+                img.kind = ImageKind::Id(id)
+            }
+        }
+
         let post = Post::new(
             session.user_id,
-            self.content,
+            content,
             self.options
         )?;
 

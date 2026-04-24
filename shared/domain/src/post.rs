@@ -41,3 +41,23 @@ impl UserFacingError for MessageError {
 impl Message {
     pub const MAX_CHARS: usize = 100;
 }
+
+#[nutype(
+    validate(not_empty, len_char_max = 60),
+    derive(AsRef, Debug, Clone, Serialize, Deserialize, PartialEq)
+)]
+pub struct Caption(String);
+
+impl UserFacingError for CaptionError {
+    fn formatted_error(&self) -> &'static str {
+        match self {
+            CaptionError::NotEmptyViolated => "Caption cannot be empty",
+            CaptionError::LenCharMaxViolated => "Caption is too long, must be less than 60 chars",
+            _ => ""
+        }
+    }
+}
+
+impl Caption {
+    pub const MAX_CHARS: usize = 60;
+}

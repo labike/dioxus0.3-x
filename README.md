@@ -8,3 +8,6 @@ createuser -s -p test
 
 psql -d dioxus-x -U postgres root
 ```
+
+#### Preview
+![示例](Snipaste_2026-04-24_22-08-15.png)

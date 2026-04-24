@@ -17,26 +17,33 @@ pub fn App(cx: Scope) -> Element {
     let toaster = use_toaster(cx);
     cx.render(rsx!{
         Router {
-            Route {
-                to: page::route::REGISTER,
-                page::Register {}
+            main {
+                class: "max-w-[var(--content-max-width)] min-w[var(--content-min-width)] max-auto p-4",
+                Route {
+                    to: page::route::REGISTER,
+                    page::Register {}
+                },
+                Route {
+                    to: page::route::LOGIN,
+                    page::Login {}
+                },
+                Route {
+                    to: page::route::HOME,
+                    page::Home {}
+                },
+                Route {
+                    to: page::route::POST_NEW_CHAT,
+                    page::NewChat {}
+                },
+                Route {
+                    to: page::route::POST_NEW_IMAGE,
+                    page::NewImage {}
+                },
+                Route {
+                    to: page::route::POSTS_TRENDING,
+                    page::Trending {}
+                }
             },
-            Route {
-                to: page::route::LOGIN,
-                page::Login {}
-            },
-            Route {
-                to: page::route::HOME,
-                page::Home {}
-            },
-            Route {
-                to: page::route::POST_NEW_CHAT,
-                page::NewChat {}
-            },
-            Route {
-                to: page::route::POSTS_TRENDING,
-                page::Trending {}
-            }
             ToastRoot {
                 toaster: toaster
             },
