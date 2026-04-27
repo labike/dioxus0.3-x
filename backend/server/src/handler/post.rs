@@ -7,7 +7,7 @@ use uchat_domain::Username;
 use crate::AppState;
 use crate::extractor::{DbConnection, UserSession};
 use crate::handler::{save_image, AuthorizatedApiRequest};
-use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk};
+use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, Vote, VoteOk};
 use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, ImageKind, LikeStatus, PublicPost};
 use uchat_endpoint::{app_url, RequestFailed};
 use uchat_endpoint::app_url::user_content;
@@ -38,6 +38,19 @@ pub fn to_public(
                         .join(&id.to_string())
                         .unwrap();
                     image.kind = ImageKind::Url(url);
+                }
+            }
+            Content::Poll(ref mut poll) => {
+                for (id, result) in query_post::get_poll_results(conn, post.id)?.results {
+                    for choice in poll.choices.iter_mut() {
+                        if choice.id == id {
+                            choice.num_votes = result;
+                            break;
+                        }
+                    }
+                }
+                if let Some(session) = session {
+                    poll.voted = query_post::did_vote(conn, session.user_id, post.id)?;
                 }
             }
             _ => ()
@@ -271,6 +284,24 @@ impl AuthorizatedApiRequest for Boost {
             Json(BoostOk {
                 status: self.action,
             })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for Vote {
+    type Response = (StatusCode, Json<VoteOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let cast = uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
+        Ok((
+            StatusCode::OK,
+            Json(VoteOk {cast})
         ))
     }
 }

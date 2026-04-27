@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::UserFacingError;
 
 #[nutype(
-    validate(len_char_max = 30),
+    validate(not_empty, len_char_max = 30),
     derive(AsRef, Clone, Debug, Serialize, Deserialize, PartialEq)
 )]
 pub struct Heading(String);
@@ -15,6 +15,7 @@ impl Heading {
 impl UserFacingError for HeadingError {
     fn formatted_error(&self) -> &'static str {
         match self {
+            HeadingError::NotEmptyViolated => "Heading cannot be empty",
             HeadingError::LenCharMaxViolated => "Heading is too long, must be less than 30 chars",
             _ => {""}
         }
@@ -42,6 +43,7 @@ impl Message {
     pub const MAX_CHARS: usize = 100;
 }
 
+// ------------------------------upload image caption
 #[nutype(
     validate(not_empty, len_char_max = 60),
     derive(AsRef, Debug, Clone, Serialize, Deserialize, PartialEq)
@@ -60,4 +62,46 @@ impl UserFacingError for CaptionError {
 
 impl Caption {
     pub const MAX_CHARS: usize = 60;
+}
+
+
+// --------------------------------------poll
+#[nutype(
+    validate(not_empty, len_char_max = 50),
+    derive(AsRef, Clone, Debug, Serialize, Deserialize, PartialEq)
+)]
+pub struct PollHeading(String);
+
+impl PollHeading {
+    pub const MAX_CHARS: usize = 50;
+}
+
+impl UserFacingError for PollHeadingError {
+    fn formatted_error(&self) -> &'static str {
+        match self {
+            PollHeadingError::NotEmptyViolated => "Poll heading cannot be empty",
+            PollHeadingError::LenCharMaxViolated => "Poll Heading is too long, must be less than 50 chars",
+            _ => {""}
+        }
+    }
+}
+
+#[nutype(
+    validate(not_empty, len_char_max = 80),
+    derive(AsRef, Debug, Clone, Serialize, Deserialize, PartialEq)
+)]
+pub struct PollChoiceDescription(String);
+
+impl UserFacingError for PollChoiceDescriptionError {
+    fn formatted_error(&self) -> &'static str {
+        match self {
+            PollChoiceDescriptionError::NotEmptyViolated => "PollChoiceDescriptionError cannot be empty",
+            PollChoiceDescriptionError::LenCharMaxViolated => "PollChoiceDescriptionError is too long, must be less than 80 chars",
+            _ => ""
+        }
+    }
+}
+
+impl PollChoiceDescription {
+    pub const MAX_CHARS: usize = 80;
 }

@@ -42,6 +42,10 @@ pub fn App(cx: Scope) -> Element {
                 Route {
                     to: page::route::POSTS_TRENDING,
                     page::Trending {}
+                },
+                Route {
+                    to: page::route::POST_NEW_POLL,
+                    page::NewPoll {}
                 }
             },
             ToastRoot {

@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
-use uchat_domain::ids::{ImageId, PostId, UserId};
-use uchat_domain::post::{Message, Heading, Caption};
+use uchat_domain::ids::{ImageId, PollChoiceId, PostId, UserId};
+use uchat_domain::post::{Message, Heading, Caption, PollHeading, PollChoiceDescription};
 use uchat_domain::Username;
 use crate::user::types::PublicUserProfile;
 
@@ -22,6 +22,7 @@ impl From<Chat> for Content {
 pub enum Content {
     Chat(Chat),
     Image(Image),
+    Poll(Poll),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -110,4 +111,30 @@ impl From<Image> for Content {
     fn from(value: Image) -> Self {
         Content::Image(value)
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct PollChoice {
+    pub id: PollChoiceId,
+    pub num_votes: i64,
+    pub description: PollChoiceDescription,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Poll {
+    pub heading: PollHeading,
+    pub choices: Vec<PollChoice>,
+    pub voted: Option<PollChoiceId>,
+}
+
+impl From<Poll> for Content {
+    fn from(value: Poll) -> Self {
+        Content::Poll(value)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum VoteCast {
+    Yes,
+    AlreadyVoted,
 }

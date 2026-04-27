@@ -11,7 +11,7 @@ use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uchat_endpoint::Endpoint;
-use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React};
+use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React, Vote};
 use uchat_endpoint::trending::endpoint::TrendingPosts;
 use uchat_endpoint::user::endpoint::{CreateUser, Login, LoginOk};
 use crate::{handler, AppState};
@@ -33,6 +33,7 @@ pub fn new_router(state: AppState) -> axum::Router {
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(React::URL, post(with_handler::<React>))
         .route(Boost::URL, post(with_handler::<Boost>))
+        .route(Vote::URL, post(with_handler::<Vote>))
         .layer(DefaultBodyLimit::disable())
         .layer(RequestBodyLimitLayer::new(8 * 1024 * 1024));
 
