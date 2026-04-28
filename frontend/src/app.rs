@@ -18,7 +18,7 @@ pub fn App(cx: Scope) -> Element {
     cx.render(rsx!{
         Router {
             main {
-                class: "max-w-[var(--content-max-width)] min-w[var(--content-min-width)] max-auto p-4",
+                class: "max-w-[var(--content-max-width)] min-w[var(--content-min-width)] mt-[var(--appbar-height)] mb-[var(--navbar-height)] max-auto p-4",
                 Route {
                     to: page::route::REGISTER,
                     page::Register {}

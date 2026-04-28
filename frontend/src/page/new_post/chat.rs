@@ -9,7 +9,8 @@ use uchat_domain::post::{Heading, Message};
 use crate::{async_handler, fetch_json, maybe_class, page};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{Chat, NewPostOptions};
-use crate::prelude::use_toaster;
+use crate::elements::app_bar::AppbarImgButton;
+use crate::prelude::{app_bar, use_toaster, Appbar};
 use crate::util::ApiClient;
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -155,6 +156,35 @@ pub fn NewChat(cx: Scope) -> Element {
     );
 
     cx.render(rsx! {
+        Appbar {
+            title: "New Chat",
+            AppbarImgButton {
+                click_handler: move |_| (),
+                img: "/static/icons/icon-message.svg",
+                label: "Chat",
+                title: "Post a new chat",
+                disabled: true,
+                append_class: app_bar::BUTTON_SELECTED
+            },
+            AppbarImgButton {
+                click_handler: move |_| router.replace_route(page::POST_NEW_IMAGE, None, None),
+                img: "/static/icons/icon-image.svg",
+                label: "Image",
+                title: "Post a new image",
+            }
+            AppbarImgButton {
+                click_handler: move |_| router.replace_route(page::POST_NEW_POLL, None, None),
+                img: "/static/icons/icon-poll.svg",
+                label: "Poll",
+                title: "Post a new poll",
+            },
+            AppbarImgButton {
+                click_handler: move |_| router.pop_route(),
+                img: "/static/icons/icon-back.svg",
+                label: "Back",
+                title: "Go to the previous page",
+            },
+        },
         form {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
