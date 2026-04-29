@@ -234,7 +234,7 @@ pub fn NewPoll(cx: Scope) -> Element {
 
     cx.render(rsx! {
         Appbar {
-            title: "New Poll",
+            title: "Poll",
             AppbarImgButton {
                 click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
                 img: "/static/icons/icon-messages.svg",

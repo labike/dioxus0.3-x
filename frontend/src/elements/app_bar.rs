@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-pub const BUTTON_SELECTED: &str = "border-slate-600";
+pub const BUTTON_SELECTED: &str = "border-b-4 border-slate-600";
 
 #[derive(Props)]
 pub struct AppbarImgButtonProps<'a, F>
@@ -21,7 +21,7 @@ where F: Fn(Event<MouseData>) {
     let append_class = cx.props.append_class.unwrap_or("");
     cx.render(rsx! {
         button {
-            class: "flex flex-col w-10 h-14 justify-end items-center border-b-4 {append_class}",
+            class: "flex flex-col w-10 h-14 justify-end items-center {append_class}",
             disabled: cx.props.disabled.unwrap_or_default(),
             onclick: |ev| {
                 if let Some(callback) = &cx.props.click_handler {
@@ -52,7 +52,7 @@ pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element {
         div {
             class: "max-w-[var(--content-max-width)] h-[var(--appbar-height)] fixed top-0 right-0 left-0 max-auto z-50 bg-slate-200",
             div {
-                class: "flex flex-row gap-8 items-center w-full pr-5 h-full",
+                class: "flex flex-row gap-3 items-center w-full pr-5 h-full",
                 div {
                     class: "cursor-pointer",
                     onclick: move |_| (),

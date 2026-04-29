@@ -32,6 +32,14 @@ pub fn App(cx: Scope) -> Element {
                     page::Home {}
                 },
                 Route {
+                    to: page::route::HOME_LIKED,
+                    page::HomeLiked {}
+                },
+                Route {
+                    to: page::route::HOME_BOOKMARKED,
+                    page::HomeBookmarked {}
+                },
+                Route {
                     to: page::route::POST_NEW_CHAT,
                     page::NewChat {}
                 },

@@ -8,26 +8,26 @@ use crate::{maybe_class, page};
 pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
     let router = use_router(cx);
     let hide_class = maybe_class!("hidden", *hide.get());
-    const BUTTON_CLASS: &str = "flex grid grid-cols-[20px-1fr] gap-4 pl-4 justify-center items-center w-full h-12 border-y navbar-border-color";
+    const BUTTON_CLASS: &str = "flex gap-4 justify-center items-center w-full h-12 border-y navbar-border-color";
 
     cx.render(rsx! {
         div {
             class: "flex flex-col absolute right-0 bottom-[var(--navbar-height)] w-28 items-center {hide_class} navbar-bg-color text-white text-sm",
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| (),
+                onclick: move |_| router.navigate_to(page::POST_NEW_POLL),
                 img {
-                    class: "invert",
-                    src: "/static/icon-poll.svg",
+                    class: "w-[24px] h-[24px]",
+                    src: "/static/icons/icon-poll.svg",
                 },
                 span {"Poll"}
             },
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| (),
+                onclick: move |_| router.navigate_to(page::POST_NEW_IMAGE),
                 img {
-                    class: "invert",
-                    src: "/static/icons-image.svg",
+                    class: "w-[24px] h-[24px]",
+                    src: "/static/icons/icon-image.svg",
                 },
                 span {"Image"}
             },
@@ -38,8 +38,8 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
                     hide.set(true);
                 },
                 img {
-                    class: "invert",
-                    src: "/static/icon-messages.svg",
+                    class: "w-[24px] h-[24px]",
+                    src: "/static/icons/icon-messages.svg",
                 },
                 span {"Chat"}
             }

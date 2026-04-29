@@ -11,7 +11,7 @@ use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPo
 use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, ImageKind, LikeStatus, PublicPost};
 use uchat_endpoint::{app_url, RequestFailed};
 use uchat_endpoint::app_url::user_content;
-use uchat_endpoint::trending::endpoint::{TrendingPostOk, TrendingPosts};
+use uchat_endpoint::trending::endpoint::{BookmarkPosts, BookmarkPostsOk, HomePosts, HomePostsOk, LikePosts, LikePostsOk, TrendingPostOk, TrendingPosts};
 use uchat_endpoint::user::types::PublicUserProfile;
 use uchat_query::AsyncConnection;
 use uchat_query::post::{delete_boosts, Post};
@@ -302,6 +302,99 @@ impl AuthorizatedApiRequest for Vote {
         Ok((
             StatusCode::OK,
             Json(VoteOk {cast})
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for HomePosts {
+    type Response = (StatusCode, Json<HomePostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_home_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(HomePostsOk { posts }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for LikePosts {
+    type Response = (StatusCode, Json<LikePostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_liked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(LikePostsOk { posts }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for BookmarkPosts {
+    type Response = (StatusCode, Json<BookmarkPostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_bookmarked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(BookmarkPostsOk { posts }),
         ))
     }
 }
