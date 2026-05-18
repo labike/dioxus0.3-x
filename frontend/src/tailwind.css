@@ -43,4 +43,11 @@
     .profile-portrait {
         @apply object-cover rounded-md w-14 h-14
     }
+
+    .profile-portrait-lg {
+        @apply object-cover rounded-md h-28 w-28
+    }
+    .fieldset {
+        @apply p-3 border-2 border-solid border-slate-300;
+    }
 }
