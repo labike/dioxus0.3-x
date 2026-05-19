@@ -4,8 +4,11 @@ use crate::prelude::*;
 use dioxus::prelude::*;
 use web_sys::HtmlInputElement;
 use uchat_domain::UserFacingError;
+use uchat_endpoint::user::endpoint::{GetMyProfile, GetMyProfileOk};
 use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
-use crate::{maybe_class, util};
+use crate::{fetch_json, maybe_class, util};
+use crate::elements::toaster::Toaster;
+use crate::util::ApiClient;
 
 #[derive(Debug, Clone)]
 enum PreviewImageData {
@@ -260,13 +263,103 @@ pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 pub fn EditProfile(cx: Scope) -> Element {
     let page_state = use_ref(cx, PageState::default);
     let router = use_router(cx);
+    let api_client = ApiClient::global();
+    let toaster = use_toaster(cx);
 
     let disabled_submit = page_state.with(|state| state.form_errors.has_messages());
     let submit_btn_style = maybe_class!("btn-disabled", disabled_submit);
 
+    let _fetch_profile = {
+        to_owned![api_client, toaster, page_state];
+        use_future(cx, (), |_| async move {
+            toaster.write().info("Retrieving profile ...", chrono::Duration::seconds(3));
+            let response = fetch_json!(<GetMyProfileOk>, api_client, GetMyProfile);
+
+            match response {
+                Ok(res) => {
+                  page_state.with_mut(|state| {
+                      state.display_name = res.display_name.unwrap_or_default();
+                      state.email = res.email.unwrap_or_default();
+                      state.profile_image = res.profile_image.map(|img| PreviewImageData::Remote(img.to_string()));
+                  });
+                },
+                Err(e) => toaster.write().error(
+                    format!("Failed to retrive profile: {e}"),
+                    chrono::Duration::seconds(3),
+                )
+            }
+        })
+    };
+
+    let form_onsubmit = async_handler!(&cx, [api_client, page_state, router, toaster], move |_|
+        async move {
+            use uchat_endpoint::user::endpoint::{UpdateProfile, UpdateProfileOk};
+            use uchat_endpoint::Update;
+
+            let request_data = {
+                use uchat_domain::{Password};
+                UpdateProfile {
+                    display_name: {
+                        let name = page_state.with(|state| state.display_name.clone());
+                        if name.is_empty() {
+                            Update::SetNull
+                        } else {
+                            Update::Change(name)
+                        }
+                    },
+                    email: {
+                        let email = page_state.with(|state| state.email.clone());
+                        if email.is_empty() {
+                            Update::SetNull
+                        } else {
+                            Update::Change(email)
+                        }
+                    },
+                    password: {
+                        let password = page_state.with(|state| state.password.clone());
+                        if password.is_empty() {
+                            Update::NoChange
+                        } else {
+                            Update::Change(Password::try_new(password).unwrap())
+                        }
+                    },
+                    profile_image: {
+                        let profile_image = page_state.with(|state| state.profile_image.clone());
+                        match profile_image {
+                            Some(PreviewImageData::DataUrl(data)) => Update::Change(data),
+                            Some(PreviewImageData::Remote(_)) => Update::NoChange,
+                            None => Update::SetNull,
+                        }
+                    }
+                }
+            };
+
+            let response = fetch_json!(<UpdateProfileOk>, api_client, request_data);
+            match response {
+                Ok(res) => {
+                    toaster.write().success("profile updated", chrono::Duration::seconds(3));
+                    router.navigate_to(crate::page::HOME)
+                },
+                Err(e) => {
+                    toaster.write().error(format!("Failed to update profile: {}", e), chrono::Duration::seconds(3));
+                }
+            }
+        }
+    );
+
     cx.render(rsx! {
+        Appbar {
+            title: "Edit Profile",
+            AppbarImgButton {
+                click_handler: move |_| router.pop_route(),
+                img: "/static/icons/icon-back.svg",
+                label: "Back",
+                title: "Go to the previous page",
+            },
+        }
         form {
             class: "flex flex-col w-full gap-3",
+            onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
             ImagePreview {
                 page_state: page_state.clone()
