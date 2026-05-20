@@ -437,3 +437,14 @@ pub fn get_bookmarked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<
         bookmarks::user_id.eq(user_id)
     ).filter(posts::direct_message_to.is_null()).select(Post::as_select()).limit(30).get_results(conn)
 }
+
+pub fn get_public_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+    use crate::schema::posts;
+
+    posts::table.filter(
+        posts::user_id.eq(user_id.as_uuid())).filter(
+        posts::time_posted.lt(Utc::now()))
+        .filter(posts::direct_message_to.is_null())
+        .order(posts::time_posted.desc()).limit(30)
+        .get_results(conn)
+}

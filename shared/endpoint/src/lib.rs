@@ -60,6 +60,8 @@ route!("/posts/liked_posts" => trending::endpoint::LikePosts);
 route!("/posts/bookmark_posts" => trending::endpoint::BookmarkPosts);
 route!("/profile/update" => user::endpoint::UpdateProfile);
 route!("/profile/me" => user::endpoint::GetMyProfile);
+route!("/profile/view" => user::endpoint::ViewProfile);
+route!("/user/follow" => user::endpoint::FollowUser);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Update<T> {

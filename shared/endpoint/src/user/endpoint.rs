@@ -5,6 +5,8 @@ use uchat_domain::{ids::*, Password, Username};
 use uchat_domain::ids::UserId;
 
 use crate::{Endpoint, Update};
+use crate::post::types::{BookmarkAction, PublicPost};
+use crate::user::types::{FollowAction, PublicUserProfile};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct CreateUser {
@@ -71,4 +73,26 @@ pub struct UpdateProfile {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct UpdateProfileOk {
     pub profile_image: Option<Url>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ViewProfile {
+    pub for_user: UserId,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ViewProfileOk {
+    pub profile: PublicUserProfile,
+    pub posts: Vec<PublicPost>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct FollowUser {
+    pub user_id: UserId,
+    pub action: FollowAction,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct FollowUserOk {
+    pub status: FollowAction,
 }

@@ -2,13 +2,14 @@
 
 use dioxus::core::ScopeState;
 use dioxus::prelude::*;
-use dioxus_router::use_router;
+use dioxus_router::{use_router, RouterContext};
 use fermi::{use_atom_ref, UseAtomRef};
 use indexmap::IndexMap;
-use uchat_domain::ids::PostId;
+use uchat_domain::ids::{PostId, UserId};
 use uchat_endpoint::post::types::PublicPost;
 use crate::elements::post::action_bar::Actionbar;
 use crate::elements::post::content::Content;
+use crate::sync_handler;
 
 pub mod content;
 pub mod action_bar;
@@ -67,6 +68,28 @@ impl PostManager {
     }
 }
 
+pub fn view_profile_onclick(router: &RouterContext, user_id: UserId) -> impl FnMut(MouseEvent) + '_ {
+    sync_handler!([router], move |_| {
+        let route = crate::page::route::profile_view(user_id);
+        router.navigate_to(&route);
+    })
+}
+
+#[inline_props]
+pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element {
+    let router = use_router(cx);
+    let poster_info = &post.by_user;
+    let profile_img_src = &poster_info.profile_image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
+
+    cx.render(rsx! {
+        img {
+            class: "profile-portrait cursor-pointer",
+            onclick: view_profile_onclick(router, post.by_user.id),
+            src: "{profile_img_src}"
+        }
+    })
+}
+
 #[inline_props]
 pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element {
     let (post_date, post_time) = {
@@ -119,8 +142,8 @@ pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
         div {
             key: "{this_post.id.to_string()}",
             class: "grid grid-cols[50px_1fr] gap-1 mb-4",
-            div {
-
+            ProfileImage {
+                post: this_post
             },
             div {
                 class: "flex flex-col gap-3",

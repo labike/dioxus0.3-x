@@ -13,7 +13,7 @@ use tracing::Level;
 use uchat_endpoint::Endpoint;
 use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React, Vote};
 use uchat_endpoint::trending::endpoint::{BookmarkPosts, HomePosts, LikePosts, TrendingPosts};
-use uchat_endpoint::user::endpoint::{CreateUser, GetMyProfile, Login, LoginOk, UpdateProfile};
+use uchat_endpoint::user::endpoint::{CreateUser, FollowUser, GetMyProfile, Login, LoginOk, UpdateProfile, ViewProfile};
 use crate::{handler, AppState};
 use crate::handler::{with_handler, with_public_handler};
 
@@ -39,6 +39,8 @@ pub fn new_router(state: AppState) -> axum::Router {
         .route(Vote::URL, post(with_handler::<Vote>))
         .route(GetMyProfile::URL, post(with_handler::<GetMyProfile>))
         .route(UpdateProfile::URL, post(with_handler::<UpdateProfile>))
+        .route(ViewProfile::URL, post(with_handler::<ViewProfile>))
+        .route(FollowUser::URL, post(with_handler::<FollowUser>))
         .layer(DefaultBodyLimit::disable())
         .layer(RequestBodyLimitLayer::new(8 * 1024 * 1024));
 
