@@ -172,25 +172,29 @@ impl AuthorizatedApiRequest for UpdateProfile {
         session: UserSession,
         state: AppState
     ) -> ApiResult<Self::Response> {
+        let mut payload = self;
+
         let password = {
-            if let Update::Change(ref password) = self.password {
+            if let Update::Change(ref password) = payload.password {
                 Update::Change(uchat_crypto::hash_password(&password)?)
             } else {
                 Update::NoChange
             }
         };
 
-        if let Update::Change(ref img) = self.profile_image {
+        if let Update::Change(ref img) = payload.profile_image {
             let id = ImageId::new();
             save_image(id, img).await?;
+            // 修复更新时直接将用户图像的base64格式数据存入数据库
+            payload.profile_image = Update::Change(id.to_string())
         }
 
         let query_prams = UpdateProfileParams {
             id: session.user_id,
-            display_name: self.display_name,
-            email: self.email,
+            display_name: payload.display_name,
+            email: payload.email,
             password_hash: password,
-            profile_image: self.profile_image.clone(),
+            profile_image: payload.profile_image.clone(),
         };
 
         uchat_query::user::update_profile(&mut conn, query_prams)?;

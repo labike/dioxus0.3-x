@@ -6,13 +6,12 @@ pub mod trending;
 pub mod edit_profile;
 pub mod view_profile;
 
-pub use register::Register;
-pub use login::Login;
-pub use home::{Home, bookmarked::HomeBookmarked, liked::HomeLiked};
-pub use new_post::*;
-pub use trending::Trending;
 pub use edit_profile::EditProfile;
-pub use view_profile::ViewProfile;
+pub use home::{bookmarked::HomeBookmarked, liked::HomeLiked, Home};
+pub use login::Login;
+pub use new_post::*;
+pub use register::Register;
+pub use trending::Trending;
 
 pub use route::*;
 

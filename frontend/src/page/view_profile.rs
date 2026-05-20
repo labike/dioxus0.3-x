@@ -27,6 +27,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
             let request_data = ViewProfile {
                 for_user: user_id
             };
+            post_manager.write().clear();
             let response = fetch_json!(<ViewProfileOk>, api_client, request_data);
             match response {
                 Ok(res) => {

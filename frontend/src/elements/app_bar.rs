@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use crate::prelude::use_local_profile;
+use crate::prelude::{use_local_profile, use_sidebar};
 
 pub const BUTTON_SELECTED: &str = "border-b-4 border-slate-600";
 
@@ -53,6 +53,7 @@ pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element {
     let local_profile = use_local_profile(cx);
     let local_profile = local_profile.read();
     let profile_img_src = local_profile.image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
+    let sidebar= use_sidebar(cx);
 
     cx.render(rsx! {
         div {
@@ -61,7 +62,7 @@ pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element {
                 class: "flex flex-row gap-3 items-center w-full pr-5 h-full",
                 div {
                     class: "cursor-pointer",
-                    onclick: move |_| (),
+                    onclick: move |_| sidebar.write().open(),
                     img {
                         class: "profile-portrait",
                         src: "{profile_img_src}"
