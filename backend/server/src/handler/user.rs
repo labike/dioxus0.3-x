@@ -12,11 +12,11 @@ use crate::handler::{save_image, AuthorizatedApiRequest, PublicApiRequest};
 use uchat_domain::ids::{ImageId, UserId};
 use uchat_domain::user::DisplayName;
 use uchat_endpoint::post::types::PublicPost;
-use uchat_endpoint::Update;
+use uchat_endpoint::{RequestFailed, Update};
 use uchat_endpoint::user::types::{FollowAction, PublicUserProfile};
 use uchat_query::AsyncConnection;
 use uchat_query::post::Post;
-use crate::error::ApiResult;
+use crate::error::{ApiError, ApiResult, ServerError};
 
 fn profile_id_to_url(id: &str) -> Url {
     use uchat_endpoint::app_url::{self, user_content};
@@ -26,14 +26,25 @@ fn profile_id_to_url(id: &str) -> Url {
 #[derive(Clone)]
 pub struct SessionSignature(String);
 
-pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
+pub fn to_public(
+    conn: &mut uchat_query::AsyncConnection,
+    session: Option<&UserSession>,
+    user: User
+) -> ApiResult<PublicUserProfile> {
     Ok(PublicUserProfile {
         id: user.id,
         display_name: user.display_name.and_then(|name| DisplayName::try_new(name).ok()),
         handle: user.handle,
         profile_image: user.profile_image.as_ref().map(|id| profile_id_to_url(id)),
         created_at: user.created_at,
-        am_following: false,
+        am_following: {
+            match session {
+                Some(session) => {
+                    uchat_query::user::is_following(conn, session.user_id, user.id)?
+                },
+                None => false,
+            }
+        },
     })
 }
 
@@ -108,16 +119,18 @@ impl PublicApiRequest for Login {
         let hash = get_password_hash(
             &mut conn,
             &self.username
-        )?;
+        ).map_err(|_| ServerError::wrong_password())?;
 
-        let hash = uchat_crypto::password::deserialize_hash(&hash)?;
+        let hash = uchat_crypto::password::deserialize_hash(&hash).map_err(|_| ServerError::wrong_password())?;
 
-        uchat_crypto::verify_password(self.password, &hash)?;
+        uchat_crypto::verify_password(self.password, &hash).map_err(|_| ServerError::wrong_password())?;
 
-        let user = uchat_query::user::find(&mut conn, &self.username)?;
+        let user = uchat_query::user::find(&mut conn, &self.username).map_err(|_| ServerError::missing_login())?;
 
         // 生成session
         let (session, signature, duration) = generate_session(&mut conn, user.id, &state)?;
+
+        let profile_image_url = user.profile_image.as_ref().map(|id| profile_id_to_url(id));
 
         Ok((
             StatusCode::OK,
@@ -127,7 +140,7 @@ impl PublicApiRequest for Login {
                 session_signature: signature.0,
                 display_name: user.display_name,
                 email: user.email,
-                profile_image: None,
+                profile_image: profile_image_url,
                 user_id: user.id,
             })
         ))
@@ -226,7 +239,7 @@ impl AuthorizatedApiRequest for ViewProfile {
         state: AppState
     ) -> ApiResult<Self::Response> {
         let profile = uchat_query::user::get(&mut conn, self.for_user)?;
-        let profile = to_public(profile)?;
+        let profile = to_public(&mut conn, Some(&session), profile)?;
 
         let mut posts = vec![];
 
@@ -257,6 +270,15 @@ impl AuthorizatedApiRequest for FollowUser {
         session: UserSession,
         state: AppState
     ) -> ApiResult<Self::Response> {
+        if self.user_id == session.user_id {
+            return Err(ApiError {
+                code: Some(StatusCode::BAD_REQUEST),
+                err: color_eyre::Report::new(RequestFailed {
+                    msg: "cannot follow self".to_string()
+                })
+            })
+        }
+
         match self.action {
             FollowAction::Follow => {
                 uchat_query::user::follow(&mut conn, session.user_id, self.user_id)?;

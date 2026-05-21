@@ -2,6 +2,7 @@
 
 use crate::prelude::*;
 use dioxus::prelude::*;
+use dioxus_router::use_route;
 use crate::{maybe_class, page};
 
 #[inline_props]
@@ -83,6 +84,22 @@ pub fn NavButton<'a>(
 }
 pub fn Navbar(cx: Scope) -> Element {
     let hide_new_post_popup = use_state(cx, || true);
+    let router = use_router(cx);
+    let route = use_route(cx);
+    let hide_navbar = use_state(cx, || false);
+    let current_route = route.url().path().to_string();
+
+    use_effect(cx, (&current_route,), |(current_route,)| {
+        to_owned![hide_navbar];
+        async move {
+            let should_hide = current_route == page::LOGIN || current_route == page::REGISTER;
+            hide_navbar.set(should_hide);
+        }
+    });
+
+    if *hide_navbar.get() {
+        return None;
+    }
 
     cx.render(rsx! {
         nav {

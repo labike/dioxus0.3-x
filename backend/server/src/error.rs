@@ -1,12 +1,28 @@
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
+use crate::error::ServerError::Login;
 
 pub type ApiResult<T> = std::result::Result<T, ApiError>;
 
 pub struct ApiError {
     pub code: Option<StatusCode>,
     pub err: color_eyre::Report,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("Login failed")]
+    Login((StatusCode, String))
+}
+
+impl ServerError {
+    pub fn missing_login() -> Self {
+        Self::Login((StatusCode::NOT_FOUND, "User not found".to_string()))
+    }
+    pub fn wrong_password() -> Self {
+        Self::Login((StatusCode::BAD_REQUEST, "Invalid password".to_string()))
+    }
 }
 
 pub fn err_response<T: Into<String>>(
@@ -25,6 +41,13 @@ impl IntoResponse for ApiError {
         if let Some(code) = self.code {
             return err_response(code, format!("{}", self.err));
         }
+
+        if let Some(server_err) = self.err.downcast_ref::<ServerError>() {
+            return match server_err {
+                ServerError::Login((code, msg)) => err_response(*code, msg)
+            }
+        }
+
         return err_response(StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error");
     }
 }

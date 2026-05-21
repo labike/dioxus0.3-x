@@ -6,6 +6,7 @@ use uchat_domain::ids::{PostId, UserId};
 use uchat_domain::Username;
 use uchat_endpoint::Update;
 use crate::{DieselError, QueryError};
+use crate::schema::followers::dsl::followers;
 use crate::schema::followers::follows;
 use crate::schema::users::display_name;
 
@@ -138,5 +139,25 @@ pub fn unfollow(conn: &mut PgConnection, user_id: UserId, stop_following: UserId
                 crate::post::DeleteStatus::NotFound
             }
         })
+    }
+}
+
+pub fn is_following(conn: &mut PgConnection, user_id: UserId, is_following: UserId) -> Result<bool, DieselError> {
+    let uid = user_id;
+    let fid = is_following;
+
+    {
+        use crate::schema::followers::dsl::*;
+        use diesel::dsl::count;
+
+        followers.filter(user_id.eq(uid))
+            .filter(follows.eq(fid))
+            .select(count(user_id))
+            .get_result(conn)
+            .optional()
+            .map(|n: Option<i64>| match n {
+                Some(n) => n == 1,
+                None => false
+            })
     }
 }

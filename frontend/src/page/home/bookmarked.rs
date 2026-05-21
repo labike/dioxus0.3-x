@@ -19,6 +19,8 @@ pub fn HomeBookmarked(cx: Scope) -> Element {
         to_owned![api_client, toaster, post_manager];
         use_future(cx, (), |_| async move {
             toaster.write().info("Retrieving posts", chrono::Duration::seconds(3));
+            
+            post_manager.write().clear();
             let response = fetch_json!(<BookmarkPostsOk>, api_client, BookmarkPosts);
 
             match response {
@@ -31,7 +33,34 @@ pub fn HomeBookmarked(cx: Scope) -> Element {
         })
     };
 
-    let Posts = post_manager.read().all_to_public();
+    // let Posts = post_manager.read().all_to_public();
+    let Posts = {
+        let posts = post_manager.read().all_to_public();
+        if posts.is_empty() {
+            let TrendingLink = rsx! {
+                a {
+                    class: "link",
+                    onclick: move |_| {
+                        router.navigate_to(page::POSTS_TRENDING);
+                    },
+                    "trending"
+                }
+            };
+
+            rsx! {
+                div {
+                    class: "flex flex-col text-center justify-center h-[calc(100vh_-_var(--navbar-height)_-_var(--appbar-height))]",
+                    span {
+                        "You don't have any bookmarked posts yet. Check out what's", TrendingLink ", and follow some posts"
+                    }
+                }
+            }
+        } else {
+            rsx! {
+                posts.into_iter()
+            }
+        }
+    };
 
     cx.render(rsx! {
         Appbar {
@@ -57,6 +86,6 @@ pub fn HomeBookmarked(cx: Scope) -> Element {
                 title: "Go to the gome page",
             },
         },
-        Posts.into_iter()
+        Posts
     })
 }

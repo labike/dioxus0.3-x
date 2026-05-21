@@ -18,6 +18,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
     let user_id = dioxus_router::use_route(cx).last_segment().and_then(
         |id| UserId::from_str(id).ok()
     ).unwrap_or_default();
+    let local_profile = use_local_profile(cx);
 
     use_effect(cx, (&user_id,), |(user_id,)| {
         to_owned![api_client, post_manager, profile, toaster];
@@ -44,7 +45,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
 
     let follow_onclick = async_handler!(
         &cx,
-        [api_client, toaster, profile],
+        [api_client, toaster, profile, local_profile],
         move |_| async move {
             let am_following = match profile.read().as_ref() {
                 Some(profile) => profile.am_following,
@@ -86,6 +87,19 @@ pub fn ViewProfile(cx: Scope) -> Element {
                     true => "Unfollow",
                     false => "Follow",
                 };
+                let FollowButton = local_profile.read().user_id.map(|id| {
+                    if id == profile.id {
+                        None
+                    } else {
+                        cx.render(rsx! {
+                            button {
+                                class: "btn",
+                                onclick: follow_onclick,
+                                "{follow_button_text}"
+                            }
+                        })
+                    };
+                });
 
                 rsx! {
                     div {
@@ -103,11 +117,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
                         div {
                             "Name: {display_name}"
                         },
-                        button {
-                            class: "btn",
-                            onclick: follow_onclick,
-                            "{follow_button_text}"
-                        }
+                        FollowButton
                     }
                 }
             },

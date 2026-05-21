@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
+use dioxus_router::Link;
 use uchat_domain::UserFacingError;
 use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
 use crate::{fetch_json, maybe_class, page};
@@ -11,6 +12,7 @@ pub struct PageState {
     username: UseState<String>,
     password: UseState<String>,
     form_errors: KeyedNotifications,
+    server_messages: KeyedNotifications,
 }
 
 impl PageState {
@@ -19,6 +21,7 @@ impl PageState {
             username: use_state(cx, String::new).clone(),
             password: use_state(cx, String::new).clone(),
             form_errors: KeyedNotifications::default(),
+            server_messages: KeyedNotifications::default(),
         }
     }
 
@@ -80,6 +83,16 @@ pub fn PasswordInput<'a>(
     })
 }
 
+pub fn RegisterLink(cx: Scope) -> Element {
+    cx.render(rsx! {
+        Link {
+            class: "link text-center",
+            to: page::REGISTER,
+            "Create Account"
+        }
+    })
+}
+
 pub fn Login(cx: Scope) -> Element {
     let api_client = ApiClient::global();
     // let username = use_state(cx, String::new);
@@ -125,7 +138,9 @@ pub fn Login(cx: Scope) -> Element {
                     local_profile.write().user_id = Some(res.user_id);
                     router.navigate_to(page::HOME)
                 },
-                Err(e) => {}
+                Err(e) => {
+                    page_state.with_mut(|state| state.server_messages.set("login-fail", e.to_string()))
+                }
             }
         }
     );
@@ -167,6 +182,11 @@ pub fn Login(cx: Scope) -> Element {
             prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
 
+            KeyedNotificationBox {
+                legend: "Login Errors",
+                notifications: page_state.clone().with(|state| state.server_messages.clone()),
+            }
+
             UsernameInput {
                 state: page_state.with(|state| state.username.clone()),
                 oninput: username_oninput
@@ -175,7 +195,9 @@ pub fn Login(cx: Scope) -> Element {
             PasswordInput {
                 state: page_state.with(|state| state.password.clone()),
                 oninput: password_oninput
-            }
+            },
+
+            RegisterLink {},
 
             KeyedNotificationBox {
                 legend: "Form Errors",
