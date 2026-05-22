@@ -1,8 +1,7 @@
 use axum::http::StatusCode;
 use axum::{async_trait, Json};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use uchat_domain::ids::{ImageId, PostId, UserId};
+use chrono::Utc;
+use uchat_domain::ids::ImageId;
 use uchat_domain::Username;
 use crate::AppState;
 use crate::extractor::{DbConnection, UserSession};
@@ -12,7 +11,6 @@ use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, ImageKin
 use uchat_endpoint::{app_url, RequestFailed};
 use uchat_endpoint::app_url::user_content;
 use uchat_endpoint::trending::endpoint::{BookmarkPosts, BookmarkPostsOk, HomePosts, HomePostsOk, LikePosts, LikePostsOk, TrendingPostOk, TrendingPosts};
-use uchat_endpoint::user::types::PublicUserProfile;
 use uchat_query::AsyncConnection;
 use uchat_query::post::{delete_boosts, Post};
 use crate::error::{ApiError, ApiResult};
@@ -129,7 +127,7 @@ impl AuthorizatedApiRequest for NewPost {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         let mut content = self.content;
         if let Content::Image(ref mut img) = content {
@@ -163,7 +161,7 @@ impl AuthorizatedApiRequest for TrendingPosts {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         use uchat_query::post as query_post;
 
@@ -194,7 +192,7 @@ impl AuthorizatedApiRequest for Bookmark {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         match self.action {
             BookmarkAction::Add => {
@@ -224,7 +222,7 @@ impl AuthorizatedApiRequest for React {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         use uchat_query::post as query_post;
         use uchat_endpoint::post::types::LikeStatus;
@@ -266,7 +264,7 @@ impl AuthorizatedApiRequest for Boost {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         match self.action {
             BootsAction::Add => {
@@ -274,7 +272,7 @@ impl AuthorizatedApiRequest for Boost {
                 boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
             }
             BootsAction::Remove => {
-                use uchat_query::post::delete_bookmark;
+                
                 delete_boosts(&mut conn, session.user_id, self.post_id)?;
             }
         }
@@ -296,7 +294,7 @@ impl AuthorizatedApiRequest for Vote {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         let cast = uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
         Ok((
@@ -314,7 +312,7 @@ impl AuthorizatedApiRequest for HomePosts {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         use uchat_query::post as query_post;
 
@@ -345,7 +343,7 @@ impl AuthorizatedApiRequest for LikePosts {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         use uchat_query::post as query_post;
 
@@ -376,7 +374,7 @@ impl AuthorizatedApiRequest for BookmarkPosts {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState,
+        _state: AppState,
     ) -> ApiResult<Self::Response> {
         use uchat_query::post as query_post;
 

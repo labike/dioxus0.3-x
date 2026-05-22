@@ -1,6 +1,6 @@
 use axum::http::StatusCode;
 use axum::{async_trait, Json};
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use tracing::info;
 use url::Url;
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, FollowUser, FollowUserOk, GetMyProfile, GetMyProfileOk, Login, LoginOk, UpdateProfile, UpdateProfileOk, ViewProfile, ViewProfileOk};
@@ -11,11 +11,8 @@ use crate::extractor::{DbConnection, UserSession};
 use crate::handler::{save_image, AuthorizatedApiRequest, PublicApiRequest};
 use uchat_domain::ids::{ImageId, UserId};
 use uchat_domain::user::DisplayName;
-use uchat_endpoint::post::types::PublicPost;
 use uchat_endpoint::{RequestFailed, Update};
 use uchat_endpoint::user::types::{FollowAction, PublicUserProfile};
-use uchat_query::AsyncConnection;
-use uchat_query::post::Post;
 use crate::error::{ApiError, ApiResult, ServerError};
 
 fn profile_id_to_url(id: &str) -> Url {
@@ -155,7 +152,7 @@ impl AuthorizatedApiRequest for GetMyProfile {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState
+        _state: AppState
     ) -> ApiResult<Self::Response> {
         let user = uchat_query::user::get(&mut conn, session.user_id)?;
 
@@ -183,13 +180,13 @@ impl AuthorizatedApiRequest for UpdateProfile {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState
+        _state: AppState
     ) -> ApiResult<Self::Response> {
         let mut payload = self;
 
         let password = {
             if let Update::Change(ref password) = payload.password {
-                Update::Change(uchat_crypto::hash_password(&password)?)
+                Update::Change(uchat_crypto::hash_password(password)?)
             } else {
                 Update::NoChange
             }
@@ -236,7 +233,7 @@ impl AuthorizatedApiRequest for ViewProfile {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState
+        _state: AppState
     ) -> ApiResult<Self::Response> {
         let profile = uchat_query::user::get(&mut conn, self.for_user)?;
         let profile = to_public(&mut conn, Some(&session), profile)?;
@@ -268,7 +265,7 @@ impl AuthorizatedApiRequest for FollowUser {
         self,
         DbConnection(mut conn): DbConnection,
         session: UserSession,
-        state: AppState
+        _state: AppState
     ) -> ApiResult<Self::Response> {
         if self.user_id == session.user_id {
             return Err(ApiError {

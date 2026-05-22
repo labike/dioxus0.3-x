@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use chrono::Duration;
-use dioxus::html::textarea;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
@@ -36,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::post::Message;
 
     let max_chars = Message::MAX_CHARS;
@@ -75,7 +74,7 @@ pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::post::Heading;
 
     let max_chars = Heading::MAX_CHARS;
@@ -117,7 +116,7 @@ pub fn NewChat(cx: Scope) -> Element {
     let router = use_router(cx);
     let toaster = use_toaster(cx);
 
-    let page_state = use_ref(&cx, PageState::default);
+    let page_state = use_ref(cx, PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 

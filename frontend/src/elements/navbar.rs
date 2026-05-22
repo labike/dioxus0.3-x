@@ -6,7 +6,7 @@ use dioxus_router::use_route;
 use crate::{maybe_class, page};
 
 #[inline_props]
-pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
+pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element<'a> {
     let router = use_router(cx);
     let hide_class = maybe_class!("hidden", *hide.get());
     const BUTTON_CLASS: &str = "flex gap-4 justify-center items-center w-full h-12 border-y navbar-border-color";
@@ -84,7 +84,7 @@ pub fn NavButton<'a>(
 }
 pub fn Navbar(cx: Scope) -> Element {
     let hide_new_post_popup = use_state(cx, || true);
-    let router = use_router(cx);
+    let _router = use_router(cx);
     let route = use_route(cx);
     let hide_navbar = use_state(cx, || false);
     let current_route = route.url().path().to_string();

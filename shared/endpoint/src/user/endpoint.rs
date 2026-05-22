@@ -4,8 +4,8 @@ use url::Url;
 use uchat_domain::{ids::*, Password, Username};
 use uchat_domain::ids::UserId;
 
-use crate::{Endpoint, Update};
-use crate::post::types::{BookmarkAction, PublicPost};
+use crate::Update;
+use crate::post::types::PublicPost;
 use crate::user::types::{FollowAction, PublicUserProfile};
 
 #[derive(Deserialize, Serialize, Clone)]

@@ -1,5 +1,4 @@
 use nutype::nutype;
-use serde::{Deserialize, Serialize};
 use crate::UserFacingError;
 
 #[nutype(

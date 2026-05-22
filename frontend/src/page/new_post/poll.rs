@@ -1,15 +1,15 @@
 #![allow(non_snake_case)]
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use uchat_domain::ids::PollChoiceId;
-use uchat_domain::post::{Caption, Heading, Message, PollChoiceDescription, PollHeading};
-use crate::{async_handler, fetch_json, maybe_class, page, util};
+use uchat_domain::post::{PollChoiceDescription, PollHeading};
+use crate::{async_handler, fetch_json, maybe_class, page};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
-use uchat_endpoint::post::types::{Chat, Image, ImageKind, NewPostOptions, Poll, PollChoice};
+use uchat_endpoint::post::types::{NewPostOptions, Poll, PollChoice};
 use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
 use crate::util::ApiClient;
 
@@ -65,7 +65,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let max_chars = PollHeading::MAX_CHARS;
 
     let wrong_len = maybe_class!(
@@ -101,7 +101,7 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let choices = page_state.read().poll_choices.iter().map(|(&key, choice)| {
         let choice = choice.clone();
         let max_chars = PollChoiceDescription::MAX_CHARS;
@@ -167,7 +167,7 @@ pub fn NewPoll(cx: Scope) -> Element {
     let router = use_router(cx);
     let toaster = use_toaster(cx);
 
-    let page_state = use_ref(&cx, PageState::default);
+    let page_state = use_ref(cx, PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 

@@ -3,7 +3,6 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uchat_domain::ids::{SessionId, UserId};
 use crate::{schema, DieselError};
-use crate::schema::web;
 
 #[derive(Deserialize, Serialize, DieselNewType, Clone, Debug, PartialEq)]
 pub struct Fingerprint(serde_json::Value);

@@ -1,19 +1,17 @@
 #![allow(non_snake_case)]
-use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
-use uchat_endpoint::trending::endpoint::{HomePosts, HomePostsOk, LikePosts, LikePostsOk};
-use crate::elements::post::PublicPostEntry;
+use uchat_endpoint::trending::endpoint::{LikePosts, LikePostsOk};
 use crate::elements::toaster::use_toaster;
 use crate::{fetch_json, page};
 use crate::prelude::{app_bar, use_post_manager, Appbar, AppbarImgButton};
 use crate::util::ApiClient;
 
 pub fn HomeLiked(cx: Scope) -> Element {
-    let toaster = use_toaster(&cx);
+    let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
-    let post_manager = use_post_manager(&cx);
-    let router = use_router(&cx);
+    let post_manager = use_post_manager(cx);
+    let router = use_router(cx);
 
     let _fetch_posts = {
         to_owned![api_client, toaster, post_manager];

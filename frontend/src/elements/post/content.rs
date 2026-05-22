@@ -1,13 +1,11 @@
 #![allow(non_snake_case)]
 
 use std::collections::HashSet;
-use dioxus::html::{figcaption, figure};
 use dioxus::prelude::*;
 use itertools::Itertools;
 use uchat_domain::ids::{PollChoiceId, PostId};
 use uchat_endpoint::post::endpoint::{Vote, VoteOk};
-use uchat_endpoint::post::types::{Image as EndpointImage, Chat as EndpointChat, Poll as EndpointPoll, Content, ImageKind, PublicPost, VoteCast};
-use crate::elements::post::content;
+use uchat_endpoint::post::types::{Image as EndpointImage, Chat as EndpointChat, Poll as EndpointPoll, ImageKind, PublicPost, VoteCast};
 use crate::{fetch_json, maybe_class};
 use crate::prelude::*;
 use crate::util::ApiClient;
@@ -15,9 +13,8 @@ use crate::util::ApiClient;
 #[inline_props]
 pub fn Chat<'a>(
     cx: Scope<'a>,
-    post_id: PostId,
     content: &'a EndpointChat,
-) -> Element {
+) -> Element<'a> {
     let Heading = content.heading.as_ref().map(|heading| {
         rsx! {
             div {
@@ -40,9 +37,8 @@ pub fn Chat<'a>(
 #[inline_props]
 pub fn Image<'a>(
     cx: Scope<'a>,
-    post_id: PostId,
     content: &'a EndpointImage,
-) -> Element {
+) -> Element<'a> {
     let url = if let ImageKind::Url(url) = &content.kind {
         url
     } else {
@@ -76,7 +72,7 @@ pub fn Poll<'a>(
     cx: Scope<'a>,
     post_id: PostId,
     content: &'a EndpointPoll,
-) -> Element {
+) -> Element<'a> {
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
 
@@ -166,20 +162,18 @@ pub fn Poll<'a>(
 }
 
 #[inline_props]
-pub fn Content<'a>(cx: Scope<'a>, post: &'a PublicPost) -> Element {
+pub fn Content<'a>(cx: Scope<'a>, post: &'a PublicPost) -> Element<'a> {
     use uchat_endpoint::post::types::Content as EndpointContent;
     cx.render(rsx! {
         div {
             match &post.content {
                 EndpointContent::Chat(content) => rsx! {
                     Chat {
-                        post_id: post.id,
                         content: content,
                     }
                 },
                 EndpointContent::Image(content) => rsx! {
                     Image {
-                        post_id: post.id,
                         content: content,
                     }
                 },

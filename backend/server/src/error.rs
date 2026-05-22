@@ -1,7 +1,6 @@
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
-use crate::error::ServerError::Login;
 
 pub type ApiResult<T> = std::result::Result<T, ApiError>;
 
@@ -51,7 +50,7 @@ impl IntoResponse for ApiError {
             }
         }
 
-        return err_response(StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error");
+        err_response(StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
     }
 }
 

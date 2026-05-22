@@ -2,7 +2,6 @@ use std::fmt;
 use std::sync::OnceLock;
 use nutype::nutype;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use crate::UserFacingError;
 
 #[nutype(

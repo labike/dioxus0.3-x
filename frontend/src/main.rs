@@ -38,7 +38,7 @@ mod prelude {
     pub use crate::elements::toaster::use_toaster;
     pub use crate::elements::post::use_post_manager;
     pub use crate::elements::app_bar::{self, Appbar, AppbarImgButton};
-    pub use crate::elements::post::PublicPostEntry;
+    
     pub use crate::elements::local_profile::{LocalProfile, use_local_profile};
-    pub use crate::elements::sidebar::{SidebarManager, use_sidebar, Sidebar};
+    pub use crate::elements::sidebar::use_sidebar;
 }

@@ -11,9 +11,9 @@ use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uchat_endpoint::Endpoint;
-use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, NewPostOk, React, Vote};
+use uchat_endpoint::post::endpoint::{Bookmark, Boost, NewPost, React, Vote};
 use uchat_endpoint::trending::endpoint::{BookmarkPosts, HomePosts, LikePosts, TrendingPosts};
-use uchat_endpoint::user::endpoint::{CreateUser, FollowUser, GetMyProfile, Login, LoginOk, UpdateProfile, ViewProfile};
+use uchat_endpoint::user::endpoint::{CreateUser, FollowUser, GetMyProfile, Login, UpdateProfile, ViewProfile};
 use crate::{handler, AppState};
 use crate::handler::{with_handler, with_public_handler};
 

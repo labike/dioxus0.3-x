@@ -1,15 +1,14 @@
 #![allow(non_snake_case)]
 
 use chrono::Duration;
-use dioxus::html::textarea;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use web_sys::HtmlInputElement;
-use uchat_domain::post::{Caption, Heading, Message};
+use uchat_domain::post::Caption;
 use crate::{async_handler, fetch_json, maybe_class, page, util};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
-use uchat_endpoint::post::types::{Chat, Image, ImageKind, NewPostOptions};
+use uchat_endpoint::post::types::{Image, ImageKind, NewPostOptions};
 use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
 use crate::util::ApiClient;
 
@@ -36,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::post::Caption;
 
     let max_chars = Caption::MAX_CHARS;
@@ -74,7 +73,7 @@ pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let toaster = use_toaster(cx);
 
     cx.render(rsx! {
@@ -108,7 +107,7 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let image_data = page_state.read().clone().image;
     let Preview = if let Some(ref image) = image_data {
         rsx! {
@@ -138,7 +137,7 @@ pub fn NewImage(cx: Scope) -> Element {
     let router = use_router(cx);
     let toaster = use_toaster(cx);
 
-    let page_state = use_ref(&cx, PageState::default);
+    let page_state = use_ref(cx, PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 

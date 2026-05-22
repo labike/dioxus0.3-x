@@ -18,7 +18,7 @@ where F: Fn(Event<MouseData>) {
 
 pub fn AppbarImgButton<'a, F>(
     cx: Scope<'a, AppbarImgButtonProps<'a, F>>
-) -> Element
+) -> Element<'a>
 where F: Fn(Event<MouseData>) {
     let append_class = cx.props.append_class.unwrap_or("");
     cx.render(rsx! {
@@ -49,7 +49,7 @@ pub struct AppbarProps<'a> {
     pub children: Element<'a>,
 }
 
-pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element {
+pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element<'a> {
     let local_profile = use_local_profile(cx);
     let local_profile = local_profile.read();
     let profile_img_src = local_profile.image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");

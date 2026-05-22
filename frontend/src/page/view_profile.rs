@@ -4,7 +4,7 @@ use std::str::FromStr;
 use crate::prelude::*;
 use dioxus::prelude::*;
 use uchat_domain::ids::UserId;
-use uchat_endpoint::user::endpoint::{FollowUser, FollowUserOk, ViewProfile};
+use uchat_endpoint::user::endpoint::{FollowUser, FollowUserOk};
 use uchat_endpoint::user::types::FollowAction;
 use crate::fetch_json;
 use crate::util::ApiClient;
@@ -45,7 +45,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
 
     let follow_onclick = async_handler!(
         &cx,
-        [api_client, toaster, profile, local_profile],
+        [api_client, toaster, profile],
         move |_| async move {
             let am_following = match profile.read().as_ref() {
                 Some(profile) => profile.am_following,

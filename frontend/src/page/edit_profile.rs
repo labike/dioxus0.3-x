@@ -7,7 +7,6 @@ use uchat_domain::UserFacingError;
 use uchat_endpoint::user::endpoint::{GetMyProfile, GetMyProfileOk};
 use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
 use crate::{fetch_json, maybe_class, util};
-use crate::elements::toaster::Toaster;
 use crate::util::ApiClient;
 
 #[derive(Debug, Clone)]
@@ -27,7 +26,7 @@ pub struct PageState {
 }
 
 #[inline_props]
-pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let toaster = use_toaster(cx);
 
     cx.render(rsx! {
@@ -61,7 +60,7 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::user::Email;
 
     cx.render(rsx! {
@@ -108,7 +107,7 @@ pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::user::DisplayName;
 
     let max_chars = DisplayName::MAX_CHARS;
@@ -159,7 +158,7 @@ pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     let image_data = page_state.with(|state| state.profile_image.clone());
 
     let img_el = |img_src| {
@@ -190,7 +189,7 @@ pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
 }
 
 #[inline_props]
-pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     use uchat_domain::user::Password;
 
     let check_password_mismatch = move || {

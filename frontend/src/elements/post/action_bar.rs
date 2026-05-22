@@ -10,11 +10,11 @@ use crate::fetch_json;
 use crate::util::ApiClient;
 
 #[inline_props]
-pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> Element {
+pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> Element<'a> {
     let element = match *opened.get() {
         true => {
             to_owned![opened, post_id];
-            Some(rsx! { QuickRespond {post_id: post_id, opened: opened} })
+            Some(rsx! { QuickRespond {opened: opened} })
         }
         false => None,
     };
@@ -23,10 +23,10 @@ pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> El
 }
 
 #[inline_props]
-pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
+pub fn Actionbar(cx: Scope, post_id: PostId) -> Element<'a> {
     let post_manager = use_post_manager(cx);
     let this_post = post_manager.read();
-    let this_post = this_post.get(&post_id).unwrap();
+    let this_post = this_post.get(post_id).unwrap();
     let this_post_id = this_post.id;
     let quick_respond_opened = use_state(cx, || false).clone();
 
@@ -61,7 +61,7 @@ pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
 }
 
 #[inline_props]
-pub fn Bookmark(cx: Scope, post_id: PostId, bookmarked: bool) -> Element {
+pub fn Bookmark(cx: Scope, post_id: PostId, bookmarked: bool) -> Element<'a> {
     let post_manager = use_post_manager(cx);
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
@@ -118,7 +118,7 @@ pub fn LikeDislike(
     like_status: LikeStatus,
     likes: i64,
     dislikes: i64
-) -> Element {
+) -> Element<'a> {
     let post_manager = use_post_manager(cx);
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
@@ -195,7 +195,7 @@ pub fn LikeDislike(
 }
 
 #[inline_props]
-pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element {
+pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element<'a> {
     let post_manager = use_post_manager(cx);
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
@@ -255,7 +255,7 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
 }
 
 #[inline_props]
-pub fn Comment(cx: Scope, opened: UseState<bool>) -> Element {
+pub fn Comment(cx: Scope, opened: UseState<bool>) -> Element<'a> {
     let comment_onclick = sync_handler!([opened], move |_| {
         let current = *opened.get();
         opened.set(!current);

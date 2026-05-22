@@ -1,14 +1,11 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel::{PgConnection, RunQueryDsl};
-use password_hash::{PasswordHash, PasswordHashString};
-use uchat_domain::ids::{PostId, UserId};
+use password_hash::PasswordHashString;
+use uchat_domain::ids::UserId;
 use uchat_domain::Username;
 use uchat_endpoint::Update;
 use crate::{DieselError, QueryError};
-use crate::schema::followers::dsl::followers;
-use crate::schema::followers::follows;
-use crate::schema::users::display_name;
 
 pub fn new<T: AsRef<str>>(
     conn: &mut PgConnection,

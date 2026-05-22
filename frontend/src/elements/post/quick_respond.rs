@@ -1,6 +1,5 @@
 use chrono::Duration;
 use dioxus::prelude::*;
-use uchat_domain::ids::PostId;
 use uchat_domain::post::Message;
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{Chat, NewPostOptions};
@@ -41,7 +40,7 @@ pub fn MessageInput<'a>(
 }
 
 #[inline_props]
-pub fn QuickRespond(cx: Scope, post_id: PostId, opened: UseState<bool>) -> Element {
+pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element<'a> {
     let api_client = ApiClient::global();
     let toaster = use_toaster(cx);
 

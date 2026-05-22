@@ -8,7 +8,7 @@ use super::document;
 pub fn get_session() -> Option<SessionId> {
     let cookies = document().cookie().unwrap();
     uchat_cookie::get_from_str(&cookies, "session_id").and_then(
-        |id| SessionId::from_str(&id).ok()
+        |id| SessionId::from_str(id).ok()
     )
 }
 

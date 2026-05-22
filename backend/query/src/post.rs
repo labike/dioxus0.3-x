@@ -3,17 +3,8 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use uchat_domain::ids::{PollChoiceId, PostId, UserId};
-use uchat_endpoint::post::types::{PollChoice, VoteCast};
+use uchat_endpoint::post::types::VoteCast;
 use crate::{schema, DieselError};
-use crate::schema::bookmarks::dsl::bookmarks;
-use crate::schema::boosts::boosted_at;
-use crate::schema::followers::dsl::followers;
-use crate::schema::poll_choices::choice;
-use crate::schema::poll_choices::dsl::poll_choices;
-use crate::schema::poll_votes::choice_id;
-use crate::schema::posts;
-use crate::schema::reactions::dsl::reactions;
-use crate::schema::reactions::like_status;
 
 #[derive(Clone, Debug, DieselNewType, Serialize, Deserialize)]
 pub struct Content(pub serde_json::Value);

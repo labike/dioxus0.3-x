@@ -76,7 +76,7 @@ pub fn view_profile_onclick(router: &RouterContext, user_id: UserId) -> impl FnM
 }
 
 #[inline_props]
-pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element {
+pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
     let router = use_router(cx);
     let poster_info = &post.by_user;
     let profile_img_src = &poster_info.profile_image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
@@ -91,7 +91,7 @@ pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element {
 }
 
 #[inline_props]
-pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element {
+pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
     let (post_date, post_time) = {
         let date = post.time_posted.format("%Y-%m-%d");
         let time = post.time_posted.format("%H-%M-%S");
@@ -129,12 +129,12 @@ pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element {
 }
 
 #[inline_props]
-pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
+pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element<'a> {
     let post_manager = use_post_manager(cx);
-    let router = use_router(cx);
+    let _router = use_router(cx);
 
     let this_post = {
-        let post = post_manager.read().get(&post_id).unwrap().clone();
+        let post = post_manager.read().get(post_id).unwrap().clone();
         use_state(cx, || post)
     };
 

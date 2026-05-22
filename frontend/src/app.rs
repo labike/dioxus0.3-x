@@ -34,7 +34,7 @@ pub fn Init(cx: Scope) -> Element {
                     local_profile.write().image = res.profile_image;
                     local_profile.write().user_id = Some(res.user_id);
                 },
-                Err(e) => {
+                Err(_e) => {
                     toaster.write().error(
                         "please login or create account.",
                         chrono::Duration::seconds(3),
