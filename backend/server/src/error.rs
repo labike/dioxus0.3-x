@@ -23,6 +23,9 @@ impl ServerError {
     pub fn wrong_password() -> Self {
         Self::Login((StatusCode::BAD_REQUEST, "Invalid password".to_string()))
     }
+    pub fn account_exists() -> Self {
+        Self::Login((StatusCode::CONFLICT, "Account already exists".to_string()))
+    }
 }
 
 pub fn err_response<T: Into<String>>(

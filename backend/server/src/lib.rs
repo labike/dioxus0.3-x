@@ -44,3 +44,94 @@ pub mod cli {
     }
 }
 
+#[cfg(test)]
+pub mod tests {
+    use hyper::StatusCode;
+    use rand::Rng;
+    use uchat_domain::{Password, Username};
+    use uchat_endpoint::Endpoint;
+    use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
+
+    pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+    pub mod util {
+        use axum::http::Request;
+        use axum::response::{IntoResponse, Response};
+        use axum::Router;
+        use serde::Serialize;
+        use tower::ServiceExt;
+        use uchat_crypto::sign::Keys;
+        use uchat_query::AsyncConnectionPool;
+        use crate::AppState;
+
+        pub async fn new_state() -> AppState {
+            let connection_url = dotenvy::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL not set");
+            let mut rng = uchat_crypto::new_rng();
+            AppState {
+                db_pool: AsyncConnectionPool::new(connection_url).await.unwrap(),
+                signing_keys: Keys::generate(&mut rng).unwrap().1,
+                rng,
+            }
+        }
+
+        pub async fn new_router() -> Router {
+            let state = new_state().await;
+            crate::router::new_router(state)
+        }
+
+        pub async fn api_request_with_router<P>(
+            router: Router,
+            uri: &str,
+            payload: P
+        ) -> Response where P: Serialize, {
+            let payload = serde_json::to_vec(&payload).unwrap();
+            router.oneshot(
+                Request::builder().method("POST").header("Content-Type", "application/json").uri(uri).body(payload.into()).unwrap()
+            ).await.unwrap().into_response()
+        }
+
+        pub async fn api_request<P>(
+            uri: &str,
+            payload: P
+        ) -> Response where P: Serialize, {
+            let router = new_router().await;
+            api_request_with_router(router, uri, payload).await
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    pub async fn create_user() -> Result<()> {
+        use rand::distributions::Alphanumeric;
+        use rand::{thread_rng, Rng};
+
+        let username: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+        {
+            // user not exists
+            let payload = CreateUser {
+                password: Password::try_new("password")?,
+                username: Username::try_new(&username)?,
+            };
+
+            let response = util::api_request(CreateUser::URL, payload).await;
+            assert_eq!(StatusCode::CREATED, response.status());
+
+            let response = hyper::body::to_bytes(response.into_body()).await?;
+            let response: CreateUserOk = serde_json::from_slice(&response)?;
+
+            assert_eq!(username, response.username.into_inner());
+        }
+        {
+            // add duplicate user
+            let payload = CreateUser {
+                password: Password::try_new("password")?,
+                username: Username::try_new(username)?,
+            };
+
+            let response = util::api_request(CreateUser::URL, payload).await;
+
+            assert_eq!(StatusCode::CONFLICT, response.status());
+        }
+
+        Ok(())
+    }
+}

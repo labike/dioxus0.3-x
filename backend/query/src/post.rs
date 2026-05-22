@@ -448,3 +448,40 @@ pub fn get_public_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<
         .order(posts::time_posted.desc()).limit(30)
         .get_results(conn)
 }
+
+#[cfg(test)]
+pub mod tests {
+    use uchat_endpoint::post::types::NewPostOptions;
+    use crate::test_db::Result;
+    use crate::user::tests::util as test_user;
+
+    use util as test_post;
+    use crate::post::Post;
+    use crate::test_db;
+
+    pub mod util {
+        use uchat_domain::post::Message;
+        use uchat_endpoint::post::types::{Chat, Content};
+
+        pub fn new_chat(msg: &str) -> Content {
+            Content::Chat(
+                Chat {
+                    heading: None,
+                    message: Message::try_new(msg).unwrap(),
+                }
+            )
+        }
+    }
+
+    #[test]
+    fn new_and_get() -> Result<()> {
+        let mut conn = test_db::new_connection();
+        let user1 = test_user::new_user(&mut conn, "user1");
+        let content = test_post::new_chat("test msg");
+        let post = Post::new(user1.id, content, NewPostOptions::default()).expect("failed to create new post structure");
+        let post_id = super::new(&mut conn, post).expect("failed to create post");
+        let post = super::get(&mut conn, post_id).expect("failed to get post");
+        assert_eq!(post.id, post_id);
+        Ok(())
+    }
+}

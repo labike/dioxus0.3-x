@@ -48,12 +48,12 @@ db-migrate:
     diesel migration run
     # test migration
     diesel migration redo
-    psql -d postgres -c 'DROP DATABASE uchat_test;'
+    psql -d postgres -c 'DROP DATABASE dioxus-x-test;'
 
 # reset the database
 db-reset:
     diesel database reset
-    psql -d postgres -c 'DROP DATABASE uchat_test;' || true
+    psql -d postgres -c 'DROP DATABASE dioxus-x-test;' || true
 
 # create a new database migration
 db-new-migration NAME:

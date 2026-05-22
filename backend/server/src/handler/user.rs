@@ -83,7 +83,7 @@ impl PublicApiRequest for CreateUser {
             &mut conn,
             password_hash,
             &self.username
-        )?;
+        ).map_err(|_| ServerError::account_exists())?;
         info!(username = self.username.as_ref(), "new user created");
 
         let (session, signature, duration) = generate_session(&mut conn, user_id, &state)?;
