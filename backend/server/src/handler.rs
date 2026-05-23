@@ -4,7 +4,6 @@ use axum::body::{Bytes, Full};
 use axum::extract::{Path, State};
 use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
-use base64::Engine;
 use hyper::header;
 use serde::Deserialize;
 use uuid::Uuid;

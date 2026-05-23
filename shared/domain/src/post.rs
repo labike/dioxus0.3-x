@@ -16,7 +16,6 @@ impl UserFacingError for HeadingError {
         match self {
             HeadingError::NotEmptyViolated => "Heading cannot be empty",
             HeadingError::LenCharMaxViolated => "Heading is too long, must be less than 30 chars",
-            _ => {""}
         }
     }
 }
@@ -33,7 +32,6 @@ impl UserFacingError for MessageError {
             MessageError::NotEmptyViolated => "Message cannot be empty",
             MessageError::LenCharMinViolated => "Message is too short, must be more than 1 chars",
             MessageError::LenCharMaxViolated => "Message is too long, must be less than 100 chars",
-            _ => ""
         }
     }
 }
@@ -54,7 +52,6 @@ impl UserFacingError for CaptionError {
         match self {
             CaptionError::NotEmptyViolated => "Caption cannot be empty",
             CaptionError::LenCharMaxViolated => "Caption is too long, must be less than 60 chars",
-            _ => ""
         }
     }
 }
@@ -80,7 +77,6 @@ impl UserFacingError for PollHeadingError {
         match self {
             PollHeadingError::NotEmptyViolated => "Poll heading cannot be empty",
             PollHeadingError::LenCharMaxViolated => "Poll Heading is too long, must be less than 50 chars",
-            _ => {""}
         }
     }
 }
@@ -96,7 +92,6 @@ impl UserFacingError for PollChoiceDescriptionError {
         match self {
             PollChoiceDescriptionError::NotEmptyViolated => "PollChoiceDescriptionError cannot be empty",
             PollChoiceDescriptionError::LenCharMaxViolated => "PollChoiceDescriptionError is too long, must be less than 80 chars",
-            _ => ""
         }
     }
 }

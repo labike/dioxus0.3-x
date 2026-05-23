@@ -1,3 +1,5 @@
+#![allow(non_local_definitions)]
+
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};

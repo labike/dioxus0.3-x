@@ -1,3 +1,5 @@
+#![allow(non_local_definitions)]
+
 macro_rules! new_id {
     ($name: ident) => {
         #[derive(
@@ -55,6 +57,7 @@ pub enum IdError {
     Parse
 }
 
+// diesel_derive_newtype版本限制需要在文件顶部添加标注
 new_id!(UserId);
 new_id!(SessionId);
 new_id!(PostId);

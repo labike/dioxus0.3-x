@@ -183,7 +183,6 @@ pub fn Content<'a>(cx: Scope<'a>, post: &'a PublicPost) -> Element<'a> {
                         content: content,
                     }
                 },
-                _ => rsx! { "" }
             }
         }
     })

@@ -51,8 +51,10 @@ impl PostManager {
         self.posts.get(post_id)
     }
 
+    // IndexMap中shift_remove不会打乱顺序O(n),
+    // swap_remove会打乱顺序相当于之前的remove但性能更高O(1)
     pub fn remove(&mut self, post_id: &PostId) {
-        self.posts.remove(post_id);
+        self.posts.swap_remove(post_id);
     }
 
     pub fn all_to_public<'a, 'b>(&self) -> Vec<LazyNodes<'a, 'b>> {
