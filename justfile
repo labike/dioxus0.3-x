@@ -33,7 +33,7 @@ doc *ARGS:
 serve-frontend *ARGS:
     trunk --config {{TRUNK_CONFIG_FILE}} serve {{ ARGS }}
 
-# run API server
+# run API server (watchexec -r -i "frontend/**" -i "target/**" --exts rs,sql,toml -- )
 serve-api *ARGS:
     cargo run -p uchat_server {{ ARGS }}
 
@@ -48,12 +48,12 @@ db-migrate:
     diesel migration run
     # test migration
     diesel migration redo
-    psql -d postgres -c 'DROP DATABASE uchat_test;'
+    psql -d postgres -c 'DROP DATABASE dioxus-x-test;'
 
 # reset the database
 db-reset:
     diesel database reset
-    psql -d postgres -c 'DROP DATABASE uchat_test;' || true
+    psql -d postgres -c 'DROP DATABASE dioxus-x-test;' || true
 
 # create a new database migration
 db-new-migration NAME:

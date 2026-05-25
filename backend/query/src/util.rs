@@ -28,7 +28,7 @@ impl AsyncConnectionPool {
         Ok(pool)
     }
 
-    pub async fn get(&self) -> Result<AsyncConnection, QueryError> {
+    pub async fn get(&self) -> Result<AsyncConnection<'_>, QueryError> {
         self.0
             .get()
             .await
@@ -63,7 +63,7 @@ pub fn connect<S: AsRef<str>>(url: S) -> Result<PgConnection, ConnectionError> {
 }
 
 /// Usage:
-/// ```
+/// ```ignore
 /// let async_pool = new_async_pool("postgres://login@localhost/sample").await;
 /// let conn = &mut async_pool.get().await?;
 /// ```

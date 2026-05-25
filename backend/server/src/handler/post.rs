@@ -1,0 +1,398 @@
+use axum::http::StatusCode;
+use axum::{async_trait, Json};
+use chrono::Utc;
+use uchat_domain::ids::ImageId;
+use uchat_domain::Username;
+use crate::AppState;
+use crate::extractor::{DbConnection, UserSession};
+use crate::handler::{save_image, AuthorizatedApiRequest};
+use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, Vote, VoteOk};
+use uchat_endpoint::post::types::{BookmarkAction, BootsAction, Content, ImageKind, LikeStatus, PublicPost};
+use uchat_endpoint::{app_url, RequestFailed};
+use uchat_endpoint::app_url::user_content;
+use uchat_endpoint::trending::endpoint::{BookmarkPosts, BookmarkPostsOk, HomePosts, HomePostsOk, LikePosts, LikePostsOk, TrendingPostOk, TrendingPosts};
+use uchat_query::AsyncConnection;
+use uchat_query::post::{delete_boosts, Post};
+use crate::error::{ApiError, ApiResult};
+
+
+
+pub fn to_public(
+    conn: &mut AsyncConnection,
+    post: Post,
+    session: Option<&UserSession>,
+) -> ApiResult<PublicPost> {
+    use uchat_query::post as query_post;
+    use uchat_query::user as query_user;
+    use uchat_endpoint::post::types::Content;
+    
+    if let Ok(mut content) = serde_json::from_value(post.content.0) {
+        match content {
+            Content::Image(ref mut image) => {
+                if let ImageKind::Id(id) = image.kind {
+                    let url = app_url::domain_and(user_content::ROOT)
+                        .join(user_content::IMAGES)
+                        .unwrap()
+                        .join(&id.to_string())
+                        .unwrap();
+                    image.kind = ImageKind::Url(url);
+                }
+            }
+            Content::Poll(ref mut poll) => {
+                for (id, result) in query_post::get_poll_results(conn, post.id)?.results {
+                    for choice in poll.choices.iter_mut() {
+                        if choice.id == id {
+                            choice.num_votes = result;
+                            break;
+                        }
+                    }
+                }
+                if let Some(session) = session {
+                    poll.voted = query_post::did_vote(conn, session.user_id, post.id)?;
+                }
+            }
+            _ => ()
+        }
+        let aggregate_reactions = query_post::aggregate_reactions(conn, post.id)?;
+
+        Ok(PublicPost {
+            id: post.id,
+            by_user: {
+                let profile = query_user::get(conn, post.user_id)?;
+                super::user::to_public(conn, session, profile)?
+            },
+            content,
+            time_posted: post.time_posted,
+            reply_to: {
+                match post.reply_to {
+                    Some(other_post_id) => {
+                        let original_post = query_post::get(conn, other_post_id)?;
+                        let original_user = query_user::get(conn, original_post.user_id)?;
+                        Some ((
+                            Username::try_new(original_user.handle).unwrap(),
+                            original_user.id,
+                            other_post_id
+                        ))
+                    },
+                    None => None,
+                }
+            },
+            like_status: {
+                match session {
+                    Some(session) => {
+                        match query_post::get_reaction(conn, post.id, session.user_id)? {
+                            Some(reaction) if reaction.like_status == -1 => LikeStatus::Dislike,
+                            Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
+                            _ => LikeStatus::NoReaction,
+                        }
+                    },
+                    _ => LikeStatus::NoReaction,
+                }
+            },
+            bookmarked: {
+                match session {
+                    Some(session) => {
+                        query_post::get_bookmark(conn,  session.user_id, post.id)?
+                    }
+                    None => false
+                }
+            },
+            boosted: {
+                match session {
+                    Some(session) => {
+                        query_post::get_boosts(conn,  session.user_id, post.id)?
+                    }
+                    None => false
+                }
+            },
+            likes: aggregate_reactions.likes,
+            dislikes: aggregate_reactions.dislikes,
+            boosts: aggregate_reactions.boosts,
+        })
+    } else {
+        Err(ApiError {
+            code: Some(StatusCode::INTERNAL_SERVER_ERROR),
+            err: color_eyre::Report::new(RequestFailed {
+                msg: "invalid post data".to_string()
+            })
+        })
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for NewPost {
+    type Response = (StatusCode, Json<NewPostOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let mut content = self.content;
+        if let Content::Image(ref mut img) = content {
+            if let ImageKind::DataUrl(data) = &img.kind {
+                let id = ImageId::new();
+                save_image(id, &data).await?;
+                img.kind = ImageKind::Id(id)
+            }
+        }
+
+        let post = Post::new(
+            session.user_id,
+            content,
+            self.options
+        )?;
+
+        let post_id = uchat_query::post::new(&mut conn, post)?;
+
+        Ok((
+            StatusCode::OK,
+            Json(NewPostOk { post_id }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for TrendingPosts {
+    type Response = (StatusCode, Json<TrendingPostOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_trending(&mut conn)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(TrendingPostOk { posts }),
+            ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for Bookmark {
+    type Response = (StatusCode, Json<BookmarkOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            BookmarkAction::Add => {
+                use uchat_query::post::bookmark;
+                bookmark(&mut conn, session.user_id, self.post_id)?;
+            }
+            BookmarkAction::Remove => {
+                use uchat_query::post::delete_bookmark;
+                delete_bookmark(&mut conn, session.user_id, self.post_id)?;
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(BookmarkOk {
+                status: self.action,
+            })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for React {
+    type Response = (StatusCode, Json<ReactOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+        use uchat_endpoint::post::types::LikeStatus;
+
+        let reaction = uchat_query::post::Reaction {
+            post_id: self.post_id,
+            user_id: session.user_id,
+            reaction: None,
+            like_status: match self.like_status {
+                LikeStatus::Like => 1,
+                LikeStatus::Dislike => -1,
+                LikeStatus::NoReaction => 0
+            },
+            created_at: Utc::now(),
+        };
+
+        uchat_query::post::react(
+            &mut conn,
+            reaction,
+        )?;
+        let aggregate_reactions = query_post::aggregate_reactions(&mut conn, self.post_id)?;
+
+        Ok((
+            StatusCode::OK,
+            Json(ReactOk {
+                like_status: self.like_status,
+                likes: aggregate_reactions.likes,
+                dislikes: aggregate_reactions.dislikes
+            })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for Boost {
+    type Response = (StatusCode, Json<BoostOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            BootsAction::Add => {
+                use uchat_query::post::boost;
+                boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
+            }
+            BootsAction::Remove => {
+                
+                delete_boosts(&mut conn, session.user_id, self.post_id)?;
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(BoostOk {
+                status: self.action,
+            })
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for Vote {
+    type Response = (StatusCode, Json<VoteOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let cast = uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
+        Ok((
+            StatusCode::OK,
+            Json(VoteOk {cast})
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for HomePosts {
+    type Response = (StatusCode, Json<HomePostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_home_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(HomePostsOk { posts }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for LikePosts {
+    type Response = (StatusCode, Json<LikePostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_liked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(LikePostsOk { posts }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizatedApiRequest for BookmarkPosts {
+    type Response = (StatusCode, Json<BookmarkPostsOk>);
+
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        use uchat_query::post as query_post;
+
+        let mut posts = vec![];
+
+        for post in query_post::get_bookmarked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
+                }
+            }
+        }
+
+        Ok((
+            StatusCode::OK,
+            Json(BookmarkPostsOk { posts }),
+        ))
+    }
+}
