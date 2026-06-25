@@ -61,9 +61,7 @@ impl PostManager {
         self.posts.iter().map(|(&id, _)| {
             rsx! {
                 div {
-                    PublicPostEntry {
-                        post_id: id
-                    }
+                    PublicPostEntry { post_id: id }
                 }
             }
         }).collect()
@@ -78,7 +76,7 @@ pub fn view_profile_onclick(router: &RouterContext, user_id: UserId) -> impl FnM
 }
 
 #[inline_props]
-pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
+pub fn ProfileImage(cx: Scope, post: &PublicPost) -> Element {
     let router = use_router(cx);
     let poster_info = &post.by_user;
     let profile_img_src = &poster_info.profile_image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
@@ -87,13 +85,13 @@ pub fn ProfileImage<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
         img {
             class: "profile-portrait cursor-pointer",
             onclick: view_profile_onclick(router, post.by_user.id),
-            src: "{profile_img_src}"
+            src: "{profile_img_src}",
         }
     })
 }
 
 #[inline_props]
-pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
+pub fn Header(cx: Scope, post: &PublicPost) -> Element {
     let (post_date, post_time) = {
         let date = post.time_posted.format("%Y-%m-%d");
         let time = post.time_posted.format("%H-%M-%S");
@@ -108,21 +106,12 @@ pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
     let handle = &post.by_user.handle;
 
     cx.render(rsx! {
-        div {
-            class: "flex flex-row justify-between",
-            div {
-                class: "cursor-pointer",
-                onclick: move |_| (),
-                div {
-                    "{display_name}"
-                },
-                div {
-                    class: "font-light",
-                    "{handle}"
-                }
-            },
-            div {
-                class: "text-right",
+        div { class: "flex flex-row justify-between",
+            div { class: "cursor-pointer", onclick: move |_| (),
+                div { "{display_name}" }
+                div { class: "font-light", "{handle}" }
+            }
+            div { class: "text-right",
                 div { "{post_date }" }
                 div { "{post_time}" }
             }
@@ -131,7 +120,7 @@ pub fn Header<'a>(cx: Scope, post: &'a PublicPost) -> Element<'a> {
 }
 
 #[inline_props]
-pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element<'a> {
+pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
     let post_manager = use_post_manager(cx);
     let _router = use_router(cx);
 
@@ -144,20 +133,11 @@ pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element<'a> {
         div {
             key: "{this_post.id.to_string()}",
             class: "grid grid-cols[50px_1fr] gap-1 mb-4",
-            ProfileImage {
-                post: this_post
-            },
-            div {
-                class: "flex flex-col gap-3",
-                Header {
-                    post: this_post
-                }
-                Content {
-                    post: this_post,
-                }
-                Actionbar {
-                    post_id: this_post.id
-                }
+            ProfileImage { post: this_post }
+            div { class: "flex flex-col gap-3",
+                Header { post: this_post }
+                Content { post: this_post }
+                Actionbar { post_id: this_post.id }
                 hr {}
             }
         }

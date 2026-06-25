@@ -11,10 +11,10 @@ use crate::prelude::*;
 use crate::util::ApiClient;
 
 #[inline_props]
-pub fn Chat<'a>(
-    cx: Scope<'a>,
-    content: &'a EndpointChat,
-) -> Element<'a> {
+pub fn Chat(
+    cx: Scope,
+    content: &EndpointChat,
+) -> Element {
     let Heading = content.heading.as_ref().map(|heading| {
         rsx! {
             div {
@@ -35,10 +35,10 @@ pub fn Chat<'a>(
 }
 
 #[inline_props]
-pub fn Image<'a>(
-    cx: Scope<'a>,
-    content: &'a EndpointImage,
-) -> Element<'a> {
+pub fn Image(
+    cx: Scope,
+    content: &EndpointImage,
+) -> Element {
     let url = if let ImageKind::Url(url) = &content.kind {
         url
     } else {
@@ -68,11 +68,11 @@ pub fn Image<'a>(
 }
 
 #[inline_props]
-pub fn Poll<'a>(
-    cx: Scope<'a>,
+pub fn Poll(
+    cx: Scope,
     post_id: PostId,
-    content: &'a EndpointPoll,
-) -> Element<'a> {
+    content: &EndpointPoll,
+) -> Element {
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
 
@@ -162,7 +162,7 @@ pub fn Poll<'a>(
 }
 
 #[inline_props]
-pub fn Content<'a>(cx: Scope<'a>, post: &'a PublicPost) -> Element<'a> {
+pub fn Content(cx: Scope, post: &PublicPost) -> Element {
     use uchat_endpoint::post::types::Content as EndpointContent;
     cx.render(rsx! {
         div {

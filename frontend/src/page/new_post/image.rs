@@ -35,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Caption;
 
     let max_chars = Caption::MAX_CHARS;
@@ -47,41 +47,31 @@ pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "caption",
-                div {
-                    class: "flex flex-row justify-between",
-                    span {
-                        "Caption (optional)"
-                    }
-                    span {
-                        class: "text-right {wrong_len}",
-                        "{page_state.read().caption.len()}/{max_chars}",
+            label { r#for: "caption",
+                div { class: "flex flex-row justify-between",
+                    span { "Caption (optional)" }
+                    span { class: "text-right {wrong_len}",
+                        "{page_state.read().caption.len()}/{max_chars}"
                     }
                 }
-            },
+            }
             input {
                 class: "input-field",
                 id: "caption",
                 value: "{page_state.read().caption}",
-                oninput: move |ev| {
-                    page_state.with_mut(|state| state.caption = ev.data.value.clone())
-                }
+                oninput: move |ev| { page_state.with_mut(|state| state.caption = ev.data.value.clone()) },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let toaster = use_toaster(cx);
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "image-input",
-                "Uplaod Image"
-            },
+            label { r#for: "image-input", "Uplaod Image" }
             input {
                 class: "w-full",
                 id: "image-input",
@@ -93,42 +83,47 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
                         use gloo_file::{File, futures::read_as_data_url};
                         use wasm_bindgen::JsCast;
 
-                        let el = util::document().get_element_by_id("image-input").unwrap().unchecked_into::<HtmlInputElement>();
+                        let el = util::document()
+                            .get_element_by_id("image-input")
+                            .unwrap()
+                            .unchecked_into::<HtmlInputElement>();
                         let file: File = el.files().unwrap().get(0).unwrap().into();
                         match read_as_data_url(&file).await {
                             Ok(data) => page_state.with_mut(|state| state.image = Some(data)),
-                            Err(e) => toaster.write().error(format!("error loading file: {e}"), chrono::Duration::seconds(3))
+                            Err(e) => {
+                                toaster
+                                    .write()
+                                    .error(
+                                        format!("error loading file: {e}"),
+                                        chrono::Duration::seconds(3),
+                                    )
+                            }
                         }
                     }
-                }
+                },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let image_data = page_state.read().clone().image;
     let Preview = if let Some(ref image) = image_data {
         rsx! {
             img {
                 class: "max-w-[calc(var(--content-max-width)/2)] max-h-[40vh]",
-                src: "{image}"
+                src: "{image}",
             }
         }
     } else {
         rsx! {
-            div {
-                "no image uploaded"
-            }
+            div { "no image uploaded" }
         }
     };
 
     cx.render(rsx! {
-        div {
-            class: "flex flex-row justify-center",
-            Preview
-        }
+        div { class: "flex flex-row justify-center", Preview {} }
     })
 }
 
@@ -179,14 +174,13 @@ pub fn NewImage(cx: Scope) -> Element {
     );
 
     cx.render(rsx! {
-        Appbar {
-            title: "Image",
+        Appbar { title: "Image",
             AppbarImgButton {
                 click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
-            },
+            }
             AppbarImgButton {
                 click_handler: move |_| (),
                 img: "/static/icons/icon-image.svg",
@@ -200,27 +194,21 @@ pub fn NewImage(cx: Scope) -> Element {
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
-            },
+            }
             AppbarImgButton {
                 click_handler: move |_| router.pop_route(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
-            },
-        },
+            }
+        }
         form {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
-            ImageInput {
-                page_state: page_state.clone(),
-            },
-            ImagePreview {
-                page_state: page_state.clone(),
-            }
-            CaptionInput {
-                page_state: page_state.clone()
-            },
+            ImageInput { page_state: page_state.clone() }
+            ImagePreview { page_state: page_state.clone() }
+            CaptionInput { page_state: page_state.clone() }
             button {
                 class: "btn {submit_btn_style}",
                 r#type: "submit",

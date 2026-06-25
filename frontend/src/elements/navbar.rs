@@ -6,7 +6,7 @@ use dioxus_router::use_route;
 use crate::{maybe_class, page};
 
 #[inline_props]
-pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element<'a> {
+pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
     let router = use_router(cx);
     let hide_class = maybe_class!("hidden", *hide.get());
     const BUTTON_CLASS: &str = "flex gap-4 justify-center items-center w-full h-12 border-y navbar-border-color";
@@ -49,17 +49,17 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element<'a> {
 }
 
 #[derive(Props)]
-pub struct NavButtonProps<'a> {
-    img: &'a str,
-    label: &'a str,
-    onclick: EventHandler<'a, MouseEvent>,
+pub struct NavButtonProps {
+    img: &str,
+    label: &str,
+    onclick: EventHandler<MouseEvent>,
     highlight: Option<bool>,
-    children: Element<'a>,
+    children: Element,
 }
 
-pub fn NavButton<'a>(
-    cx: Scope<'a, NavButtonProps<'a>>
-) -> Element<'a> {
+pub fn NavButton(
+    cx: Scope<NavButtonProps>
+) -> Element {
     let selected_bgcolor = maybe_class!("bg-slate-500", matches!(
         cx.props.highlight, Some(true)
     ));

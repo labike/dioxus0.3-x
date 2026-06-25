@@ -6,19 +6,19 @@ use crate::prelude::{use_local_profile, use_sidebar};
 pub const BUTTON_SELECTED: &str = "border-b-4 border-slate-600";
 
 #[derive(Props)]
-pub struct AppbarImgButtonProps<'a, F>
+pub struct AppbarImgButtonProps<F>
 where F: Fn(Event<MouseData>) {
-    pub append_class: Option<&'a str>,
+    pub append_class: Option<&str>,
     pub click_handler: Option<F>,
     pub disabled: Option<bool>,
-    img: &'a str,
-    label: &'a str,
-    title: Option<&'a str>,
+    img: &str,
+    label: &str,
+    title: Option<&str>,
 }
 
-pub fn AppbarImgButton<'a, F>(
-    cx: Scope<'a, AppbarImgButtonProps<'a, F>>
-) -> Element<'a>
+pub fn AppbarImgButton<F>(
+    cx: Scope<AppbarImgButtonProps<F>>
+) -> Element
 where F: Fn(Event<MouseData>) {
     let append_class = cx.props.append_class.unwrap_or("");
     cx.render(rsx! {
@@ -44,12 +44,12 @@ where F: Fn(Event<MouseData>) {
 }
 
 #[derive(Props)]
-pub struct AppbarProps<'a> {
-    pub title: &'a str,
-    pub children: Element<'a>,
+pub struct AppbarProps {
+    pub title: &str,
+    pub children: Element,
 }
 
-pub fn Appbar<'a>(cx: Scope<'a, AppbarProps<'a>>) -> Element<'a> {
+pub fn Appbar(cx: Scope<AppbarProps>) -> Element {
     let local_profile = use_local_profile(cx);
     let local_profile = local_profile.read();
     let profile_img_src = local_profile.image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");

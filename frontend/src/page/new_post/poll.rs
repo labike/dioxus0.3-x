@@ -65,7 +65,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let max_chars = PollHeading::MAX_CHARS;
 
     let wrong_len = maybe_class!(
@@ -101,7 +101,7 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
 }
 
 #[inline_props]
-pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let choices = page_state.read().poll_choices.iter().map(|(&key, choice)| {
         let choice = choice.clone();
         let max_chars = PollChoiceDescription::MAX_CHARS;

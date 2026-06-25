@@ -35,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Message;
 
     let max_chars = Message::MAX_CHARS;
@@ -47,34 +47,27 @@ pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "message",
-                div {
-                    class: "flex flex-row justify-between",
-                    span {
-                        "Message"
-                    }
-                    span {
-                        class: "text-right {wrong_len}",
-                        "{page_state.read().message.len()}/{max_chars}",
+            label { r#for: "message",
+                div { class: "flex flex-row justify-between",
+                    span { "Message" }
+                    span { class: "text-right {wrong_len}",
+                        "{page_state.read().message.len()}/{max_chars}"
                     }
                 }
-            },
+            }
             textarea {
                 class: "input-field",
                 id: "message",
                 rows: 5,
                 value: "{page_state.read().message}",
-                oninput: move |ev| {
-                    page_state.with_mut(|state| state.message = ev.data.value.clone())
-                }
+                oninput: move |ev| { page_state.with_mut(|state| state.message = ev.data.value.clone()) },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Heading;
 
     let max_chars = Heading::MAX_CHARS;
@@ -86,26 +79,19 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "heading",
-                div {
-                    class: "flex flex-row justify-between",
-                    span {
-                        "Heading"
-                    }
-                    span {
-                        class: "text-right {wrong_len}",
-                        "{page_state.read().heading.len()}/{max_chars}",
+            label { r#for: "heading",
+                div { class: "flex flex-row justify-between",
+                    span { "Heading" }
+                    span { class: "text-right {wrong_len}",
+                        "{page_state.read().heading.len()}/{max_chars}"
                     }
                 }
-            },
+            }
             input {
                 class: "input-field",
                 id: "heading",
                 value: "{page_state.read().heading}",
-                oninput: move |ev| {
-                    page_state.with_mut(|state| state.heading = ev.data.value.clone())
-                }
+                oninput: move |ev| { page_state.with_mut(|state| state.heading = ev.data.value.clone()) },
             }
         }
     })
@@ -155,16 +141,15 @@ pub fn NewChat(cx: Scope) -> Element {
     );
 
     cx.render(rsx! {
-        Appbar {
-            title: "Chat",
+        Appbar { title: "Chat",
             AppbarImgButton {
                 click_handler: move |_| (),
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
                 disabled: true,
-                append_class: app_bar::BUTTON_SELECTED
-            },
+                append_class: app_bar::BUTTON_SELECTED,
+            }
             AppbarImgButton {
                 click_handler: move |_| router.replace_route(page::POST_NEW_IMAGE, None, None),
                 img: "/static/icons/icon-image.svg",
@@ -176,24 +161,20 @@ pub fn NewChat(cx: Scope) -> Element {
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
-            },
+            }
             AppbarImgButton {
                 click_handler: move |_| router.pop_route(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
-            },
-        },
+            }
+        }
         form {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
-            MessageInput {
-                page_state: page_state.clone()
-            },
-            HeadingInput {
-                page_state: page_state.clone()
-            }
+            MessageInput { page_state: page_state.clone() }
+            HeadingInput { page_state: page_state.clone() }
             button {
                 class: "btn {submit_btn_style}",
                 r#type: "submit",

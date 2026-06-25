@@ -9,16 +9,16 @@ use crate::prelude::*;
 use crate::util::ApiClient;
 
 pub struct PageState {
-    username: UseState<String>,
-    password: UseState<String>,
+    username: Signal<String>,
+    password: Signal<String>,
     form_errors: KeyedNotifications,
 }
 
 impl PageState {
-    pub fn new(cx: Scope) -> Self {
+    pub fn new() -> Self {
         Self {
-            username: use_state(cx, String::new).clone(),
-            password: use_state(cx, String::new).clone(),
+            username: use_signal(|| String::new()).clone(),
+            password: use_signal(|| String::new()).clone(),
             form_errors: KeyedNotifications::default(),
         }
     }
@@ -30,73 +30,61 @@ impl PageState {
     }
 }
 
-#[inline_props]
-pub fn UsernameInput<'a>(
-    cx: Scope<'a>,
-    state: UseState<String>,
-    oninput: EventHandler<'a, FormEvent>,
-) -> Element<'a> {
-    cx.render(rsx! {
-        div {
-            class: "flex flex-col",
-            label {
-                r#for: "username",
-                "Username"
-            },
+#[component]
+pub fn UsernameInput(
+    state: Signal<String>,
+    oninput: EventHandler<FormEvent>,
+) -> Element {
+    rsx! {
+        div { class: "flex flex-col",
+            label { r#for: "username", "Username" }
             input {
                 id: "username",
                 name: "username",
                 class: "input-field",
                 placeholder: "Username",
-                value: "{state.current()}",
+                value: "{state.read()}",
                 oninput: move |ev| oninput.call(ev),
             }
         }
-    })
+    }
 }
 
-#[inline_props]
-pub fn PasswordInput<'a>(
-    cx: Scope<'a>,
-    state: UseState<String>,
-    oninput: EventHandler<'a, FormEvent>,
-) -> Element<'a> {
-    cx.render(rsx! {
-        div {
-            class: "flex flex-col",
-            label {
-                r#for: "password",
-                "Password"
-            },
+#[component]
+pub fn PasswordInput(
+    state: Signal<String>,
+    oninput: EventHandler<FormEvent>,
+) -> Element {
+    rsx! {
+        div { class: "flex flex-col",
+            label { r#for: "password", "Password" }
             input {
                 class: "input-field",
                 r#type: "password",
                 id: "password",
                 name: "password",
                 placeholder: "Password",
-                value: "{state.current()}",
+                value: "{state.read()}",
                 oninput: move |ev| oninput.call(ev),
             }
         }
-    })
+    }
 }
 
-pub fn LoginLink(cx: Scope) -> Element {
-    cx.render(rsx! {
-        Link {
-            class: "link text-center",
-            to: page::LOGIN,
-            "Existing User Login"
-        }
-    })
+#[component]
+pub fn LoginLink() -> Element {
+    rsx! {
+        Link { class: "link text-center", to: page::LOGIN, "Existing User Login" }
+    }
 }
 
-pub fn Register(cx: Scope) -> Element {
+#[component]
+pub fn Register() -> Element {
     let api_client = ApiClient::global();
     // let username = use_state(cx, String::new);
     // let password = use_state(cx, String::new);
 
-    let page_state = PageState::new(cx);
+    let page_state = use_signal(PageState::new);
     let page_state = use_ref(cx, || page_state);
 
     let router = use_router(cx);
@@ -164,7 +152,7 @@ pub fn Register(cx: Scope) -> Element {
     //     true => "",
     // };
 
-    cx.render(rsx! {
+    rsx! {
         form {
             class: "flex flex-col gap-5",
             prevent_default: "onsubmit",
@@ -172,15 +160,15 @@ pub fn Register(cx: Scope) -> Element {
 
             UsernameInput {
                 state: page_state.with(|state| state.username.clone()),
-                oninput: username_oninput
-            },
+                oninput: username_oninput,
+            }
 
             PasswordInput {
                 state: page_state.with(|state| state.password.clone()),
-                oninput: password_oninput
-            },
+                oninput: password_oninput,
+            }
 
-            LoginLink {},
+            LoginLink {}
 
             KeyedNotificationBox {
                 legend: "Form Errors",
@@ -194,5 +182,5 @@ pub fn Register(cx: Scope) -> Element {
                 "Sign Up"
             }
         }
-    })
+    }
 }

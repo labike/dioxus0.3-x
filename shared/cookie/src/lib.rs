@@ -1,7 +1,7 @@
 pub const SESSION_ID: &str = "session_id";
 pub const SESSION_SIGNATURE: &str = "session_signature";
 
-pub fn get_from_str<'a>(cookies: &'a str, key: &str) -> Option<&'a str> {
+pub fn get_from_str<'a>(cookies: &'a str, key: &'a str) -> Option<&'a str> {
     cookies
         .split(';')
         .find_map(|cookie| match cookie.split_once('=') {

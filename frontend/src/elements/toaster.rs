@@ -76,11 +76,11 @@ impl Toaster {
 }
 
 #[derive(Props)]
-pub struct ToastRootProps<'a> {
-    toaster: &'a UseAtomRef<Toaster>
+pub struct ToastRootProps {
+    toaster: &UseAtomRef<Toaster>
 }
 
-pub fn ToastRoot<'a>(cx: Scope<'a, ToastRootProps<'a>>) -> Element<'a> {
+pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
     let toaster = cx.props.toaster;
 
     let toasts = &toaster.read();
@@ -129,12 +129,8 @@ pub fn ToastRoot<'a>(cx: Scope<'a, ToastRootProps<'a>>) -> Element<'a> {
     });
 
     cx.render(rsx! {
-        div {
-            class: "fixed bottom-[var(--navbar-height)] w-screen max-w-[var(--content-max-width)]",
-            div {
-                class: "flex flex-col gap-5 px-5 mb-5",
-                ToastElements
-            }
+        div { class: "fixed bottom-[var(--navbar-height)] w-screen max-w-[var(--content-max-width)]",
+            div { class: "flex flex-col gap-5 px-5 mb-5", ToastElements {} }
         }
     })
 }

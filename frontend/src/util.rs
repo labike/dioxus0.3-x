@@ -38,27 +38,27 @@ pub use maybe_class;
 
 #[macro_export]
 macro_rules! async_handler {
-    (&$cx:ident, [$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
+    ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
         move |$($args),*| {
             $(
                 #[allow(unused_mut)]
                 let mut $cap = $cap.to_owned();
             )*
-            $cx.spawn($body);
+            spawn($body);
         }
     };
-    (&$cx:ident, [$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+    ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
             $(
                 #[allow(unused_mut)]
                 let mut $cap = $cap.to_owned();
             )*
-            $cx.spawn($body);
+            spawn($body);
         }
     };
-    (&$cx:ident, move |$($args:tt),*| $body:expr) => {
+    (move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
-            $cx.spawn($body);
+            spawn($body);
         }
     };
 }

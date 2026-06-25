@@ -10,6 +10,6 @@ pub struct LocalProfile {
     pub user_id: Option<UserId>,
 }
 
-pub fn use_local_profile(cx: &ScopeState) -> &UseAtomRef<LocalProfile> {
-  use_atom_ref(cx, crate::app::LOCAL_PROFILE)
+pub fn use_local_profile() -> &UseAtomRef<LocalProfile> {
+  use_atom_ref(crate::app::LOCAL_PROFILE)
 }

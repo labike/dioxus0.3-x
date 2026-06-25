@@ -26,15 +26,12 @@ pub struct PageState {
 }
 
 #[inline_props]
-pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let toaster = use_toaster(cx);
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "image-input",
-                "Uplaod Image"
-            },
+            label { r#for: "image-input", "Uplaod Image" }
             input {
                 class: "w-full",
                 id: "image-input",
@@ -46,34 +43,45 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
                         use gloo_file::{File, futures::read_as_data_url};
                         use wasm_bindgen::JsCast;
 
-                        let el = util::document().get_element_by_id("image-input").unwrap().unchecked_into::<HtmlInputElement>();
+                        let el = util::document()
+                            .get_element_by_id("image-input")
+                            .unwrap()
+                            .unchecked_into::<HtmlInputElement>();
                         let file: File = el.files().unwrap().get(0).unwrap().into();
                         match read_as_data_url(&file).await {
-                            Ok(data) => page_state.with_mut(|state| state.profile_image = Some(PreviewImageData::DataUrl(data))),
-                            Err(e) => toaster.write().error(format!("error loading file: {e}"), chrono::Duration::seconds(3))
+                            Ok(data) => {
+                                page_state
+                                    .with_mut(|state| {
+                                        state.profile_image = Some(PreviewImageData::DataUrl(data));
+                                    })
+                            }
+                            Err(e) => {
+                                toaster
+                                    .write()
+                                    .error(
+                                        format!("error loading file: {e}"),
+                                        chrono::Duration::seconds(3),
+                                    )
+                            }
                         }
                     }
-                }
+                },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::user::Email;
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "email",
-                div {
-                    class: "flex flex-row justify-between",
-                    span {
-                        "Email Address"
-                    }
+            label { r#for: "email",
+                div { class: "flex flex-row justify-between",
+                    span { "Email Address" }
                 }
-            },
+            }
             input {
                 class: "input-field",
                 id: "email",
@@ -83,31 +91,27 @@ pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
                     if !&ev.value.is_empty() {
                         match Email::try_new(&ev.value) {
                             Ok(_) => {
-                                page_state.with_mut(
-                                  |state| state.form_errors.remove("bad-email")
-                                );
-                            },
-                            Err(e) => page_state.with_mut(
-                                |state| state.form_errors.set("bad-email", e.formatted_error())
-                            ),
+                                page_state.with_mut(|state| state.form_errors.remove("bad-email"));
+                            }
+                            Err(e) => {
+                                page_state
+                                    .with_mut(|state| {
+                                        state.form_errors.set("bad-email", e.formatted_error())
+                                    })
+                            }
                         }
                     } else {
-                        page_state.with_mut(
-                          |state| state.form_errors.remove("bad-email")
-                        );
+                        page_state.with_mut(|state| state.form_errors.remove("bad-email"));
                     };
-
-                    page_state.with_mut(
-                      |state| state.email = ev.value.clone()
-                    );
-                }
+                    page_state.with_mut(|state| state.email = ev.value.clone());
+                },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::user::DisplayName;
 
     let max_chars = DisplayName::MAX_CHARS;
@@ -119,19 +123,14 @@ pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a>
 
     cx.render(rsx! {
         div {
-            label {
-                r#for: "display-name",
-                div {
-                    class: "flex flex-row justify-between",
-                    span {
-                        "Display Name"
-                    }
-                    span {
-                        class: "text-right {wrong_len}",
-                        "{page_state.read().display_name.len()}/{max_chars}",
+            label { r#for: "display-name",
+                div { class: "flex flex-row justify-between",
+                    span { "Display Name" }
+                    span { class: "text-right {wrong_len}",
+                        "{page_state.read().display_name.len()}/{max_chars}"
                     }
                 }
-            },
+            }
             input {
                 class: "input-field",
                 id: "display-name",
@@ -140,33 +139,30 @@ pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a>
                 oninput: move |ev| {
                     match DisplayName::try_new(&ev.value) {
                         Ok(_) => {
-                            page_state.with_mut(
-                              |state| state.form_errors.remove("bad-display-name")
-                            );
-                        },
-                        Err(e) => page_state.with_mut(
-                            |state| state.form_errors.set("bad-display-name", e.formatted_error())
-                        ),
+                            page_state
+                                .with_mut(|state| state.form_errors.remove("bad-display-name"));
+                        }
+                        Err(e) => {
+                            page_state
+                                .with_mut(|state| {
+                                    state.form_errors.set("bad-display-name", e.formatted_error())
+                                })
+                        }
                     }
-                    page_state.with_mut(
-                      |state| state.display_name = ev.value.clone()
-                    );
-                }
+                    page_state.with_mut(|state| state.display_name = ev.value.clone());
+                },
             }
         }
     })
 }
 
 #[inline_props]
-pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
     let image_data = page_state.with(|state| state.profile_image.clone());
 
     let img_el = |img_src| {
         rsx! {
-            img {
-                class: "profile-portrait-lg",
-                src: "{img_src}"
-            }
+            img { class: "profile-portrait-lg", src: "{img_src}" }
         }
     };
 
@@ -174,22 +170,17 @@ pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
         Some(PreviewImageData::DataUrl(ref data)) => img_el(data),
         Some(PreviewImageData::Remote(ref url)) => img_el(url),
         None => rsx! {
-            div {
-                "No image uploaded"
-            }
+            div { "No image uploaded" }
         }
     };
 
     cx.render(rsx! {
-        div {
-            class: "flex flex-row justify-center",
-            img_data
-        }
+        div { class: "flex flex-row justify-center", img_data }
     })
 }
 
 #[inline_props]
-pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
+pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
     use uchat_domain::user::Password;
 
     let check_password_mismatch = move || {
@@ -202,18 +193,11 @@ pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
     };
 
     cx.render(rsx! {
-        fieldset {
-            class: "fieldset",
-            legend {
-                "Set new password"
-            },
-            div {
-                class: "flex flex-row w-full gap-2",
+        fieldset { class: "fieldset",
+            legend { "Set new password" }
+            div { class: "flex flex-row w-full gap-2",
                 div {
-                    label {
-                        r#for: "password",
-                        "Password"
-                    },
+                    label { r#for: "password", "Password" }
                     input {
                         id: "password",
                         class: "input-field",
@@ -222,25 +206,28 @@ pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
                         value: "{page_state.read().password}",
                         oninput: move |ev| {
                             match Password::try_new(&ev.value) {
-                                Ok(_) => page_state.with_mut(|state| state.form_errors.remove("bad-password")),
-                                Err(e) => page_state.with_mut(|state| state.form_errors.set("bad-password", e.formatted_error())),
+                                Ok(_) => {
+                                    page_state.with_mut(|state| state.form_errors.remove("bad-password"))
+                                }
+                                Err(e) => {
+                                    page_state
+                                        .with_mut(|state| {
+                                            state.form_errors.set("bad-password", e.formatted_error())
+                                        })
+                                }
                             };
                             page_state.with_mut(|state| state.password = ev.value.clone());
                             page_state.with_mut(|state| state.password_confirmation = "".to_string());
-
                             if page_state.with(|state| state.password.is_empty()) {
                                 page_state.with_mut(|state| state.form_errors.remove("bad-password"));
                             } else {
                                 check_password_mismatch();
                             }
-                        }
+                        },
                     }
-                },
+                }
                 div {
-                    label {
-                        r#for: "password-confirmation",
-                        "Password Confirm"
-                    },
+                    label { r#for: "password-confirmation", "Password Confirm" }
                     input {
                         id: "password-confirm",
                         class: "input-field",
@@ -250,7 +237,7 @@ pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element<'a> {
                         oninput: move |ev| {
                             page_state.with_mut(|state| state.password_confirmation = ev.value.clone());
                             check_password_mismatch();
-                        }
+                        },
                     }
                 }
             }
@@ -349,52 +336,38 @@ pub fn EditProfile(cx: Scope) -> Element {
     );
 
     cx.render(rsx! {
-        Appbar {
-            title: "Edit Profile",
+        Appbar { title: "Edit Profile",
             AppbarImgButton {
                 click_handler: move |_| router.pop_route(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
-            },
+            }
         }
         form {
             class: "flex flex-col w-full gap-3",
             onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
-            ImagePreview {
-                page_state: page_state.clone()
-            },
-            ImageInput {
-                page_state: page_state.clone()
-            },
-            DisplayNameInput {
-                page_state: page_state.clone()
-            },
-            EmailInput {
-                page_state: page_state.clone()
-            },
-            PasswordInput {
-                page_state: page_state.clone()
-            }
-            KeyedNotificationBox {
-                notifications: page_state.clone().read().form_errors.clone()
-            },
-            div {
-                class: "flex flex-row justify-end gap-3",
+            ImagePreview { page_state: page_state.clone() }
+            ImageInput { page_state: page_state.clone() }
+            DisplayNameInput { page_state: page_state.clone() }
+            EmailInput { page_state: page_state.clone() }
+            PasswordInput { page_state: page_state.clone() }
+            KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() }
+            div { class: "flex flex-row justify-end gap-3",
                 button {
                     class: "btn",
                     prevent_default: "onclick",
                     onclick: move |_| router.pop_route(),
                     "Cancel"
-                },
+                }
                 button {
                     class: "btn {submit_btn_style}",
                     r#type: "submit",
                     disabled: disabled_submit,
                     "Submit"
                 }
-            },
+            }
         }
     })
 }

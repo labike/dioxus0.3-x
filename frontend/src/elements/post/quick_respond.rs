@@ -12,27 +12,25 @@ fn can_submit(message: &str) -> bool {
 }
 
 #[inline_props]
-pub fn MessageInput<'a>(
-    cx: Scope<'a>,
-    message: &'a str,
-    on_input: EventHandler<'a, FormEvent>,
-) -> Element<'a> {
+pub fn MessageInput(
+    cx: Scope,
+    message: &str,
+    on_input: EventHandler<FormEvent>,
+) -> Element {
     let max_chars = Message::MAX_CHARS;
 
     let wrong_len = maybe_class!("err-text-color", !can_submit(message));
 
     cx.render(rsx! {
-        div {
-            class: "flex flex-row relative",
+        div { class: "flex flex-row relative",
             textarea {
                 class: "input-field",
                 id: "message",
                 rows: 3,
                 value: "{message}",
                 oninput: move |ev| on_input.call(ev),
-            },
-            div {
-                class: "text-right {wrong_len} absolute bottom-1 right-1",
+            }
+            div { class: "text-right {wrong_len} absolute bottom-1 right-1",
                 "{message.len()}/{max_chars}"
             }
         }
@@ -40,7 +38,7 @@ pub fn MessageInput<'a>(
 }
 
 #[inline_props]
-pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element<'a> {
+pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element {
     let api_client = ApiClient::global();
     let toaster = use_toaster(cx);
 
@@ -80,17 +78,12 @@ pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element<'a> {
     let submit_btn_style = maybe_class!("btn-disabled", !can_submit(message.get()));
 
     cx.render(rsx! {
-        form {
-            onsubmit: form_onsubmit,
-            prevent_default: "onsubmit",
-            div {
-                class: "w-full flex flex-col justify-end",
+        form { onsubmit: form_onsubmit, prevent_default: "onsubmit",
+            div { class: "w-full flex flex-col justify-end",
                 MessageInput {
-                    message: message,
-                    on_input: move |ev: FormEvent| {
-                        message.set(ev.value.clone())
-                    }
-                },
+                    message,
+                    on_input: move |ev: FormEvent| { message.set(ev.value.clone()) },
+                }
                 button {
                     class: "mt-2 btn {submit_cursor} {submit_btn_style} w-[80px] h-[30px] flex justify-center items-center self-end",
                     r#type: "submit",
