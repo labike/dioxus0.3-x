@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
-use std::collections::hash_map::Values;
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::Values;
 
 use std::collections::HashMap;
 
@@ -20,7 +20,7 @@ impl KeyedNotifications {
         self.inner.insert(key.into(), value.into());
     }
 
-    pub fn remove<K:AsRef<str>>(&mut self, key: K) {
+    pub fn remove<K: AsRef<str>>(&mut self, key: K) {
         self.inner.remove(key.as_ref());
     }
 
@@ -49,12 +49,12 @@ pub fn KeyedNotificationBox(cx: Scope<KeyedNotificationsProps>) -> Element {
     let legend = cx.props.legend.unwrap_or("Errors");
 
     match cx.props.notifications.has_messages() {
-        true => cx.render(rsx! {
+        true => rsx! {
             fieldset { class: "fieldset border-red-300 rounded",
                 legend { class: "bg-red-300 px-4", "{legend}" }
                 ul { class: "list-disc ml-4", notifications }
             }
-        }),
-        false => None
+        },
+        false => None,
     }
 }

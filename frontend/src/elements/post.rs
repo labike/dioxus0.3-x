@@ -1,5 +1,8 @@
 #![allow(non_snake_case)]
 
+use crate::elements::post::action_bar::Actionbar;
+use crate::elements::post::content::Content;
+use crate::sync_handler;
 use dioxus::core::ScopeState;
 use dioxus::prelude::*;
 use dioxus_router::{use_router, RouterContext};
@@ -7,16 +10,13 @@ use fermi::{use_atom_ref, UseAtomRef};
 use indexmap::IndexMap;
 use uchat_domain::ids::{PostId, UserId};
 use uchat_endpoint::post::types::PublicPost;
-use crate::elements::post::action_bar::Actionbar;
-use crate::elements::post::content::Content;
-use crate::sync_handler;
 
-pub mod content;
 pub mod action_bar;
+pub mod content;
 pub mod quick_respond;
 
-pub fn use_post_manager(cx: &ScopeState) -> &UseAtomRef<PostManager> {
-    use_atom_ref(cx, crate::app::POSTMANAGER)
+pub fn use_post_manager() -> &UseAtomRef<PostManager> {
+    use_atom_ref(crate::app::POSTMANAGER)
 }
 
 #[derive(Default)]
@@ -26,7 +26,9 @@ pub struct PostManager {
 
 impl PostManager {
     pub fn update<F>(&mut self, id: PostId, mut update_fn: F) -> bool
-    where F: FnMut(&mut PublicPost), {
+    where
+        F: FnMut(&mut PublicPost),
+    {
         if let Some(post) = self.posts.get_mut(&id) {
             update_fn(post);
             true
@@ -36,7 +38,9 @@ impl PostManager {
     }
 
     pub fn populate<T>(&mut self, posts: T)
-    where T: Iterator<Item = PublicPost>, {
+    where
+        T: Iterator<Item = PublicPost>,
+    {
         self.posts.clear();
         for post in posts {
             self.posts.insert(post.id, post);
@@ -58,17 +62,23 @@ impl PostManager {
     }
 
     pub fn all_to_public<'a, 'b>(&self) -> Vec<LazyNodes<'a, 'b>> {
-        self.posts.iter().map(|(&id, _)| {
-            rsx! {
-                div {
-                    PublicPostEntry { post_id: id }
+        self.posts
+            .iter()
+            .map(|(&id, _)| {
+                rsx! {
+                    div {
+                        PublicPostEntry { post_id: id }
+                    }
                 }
-            }
-        }).collect()
+            })
+            .collect()
     }
 }
 
-pub fn view_profile_onclick(router: &RouterContext, user_id: UserId) -> impl FnMut(MouseEvent) + '_ {
+pub fn view_profile_onclick(
+    router: &RouterContext,
+    user_id: UserId,
+) -> impl FnMut(MouseEvent) + '_ {
     sync_handler!([router], move |_| {
         let route = crate::page::route::profile_view(user_id);
         router.navigate_to(&route);
@@ -76,22 +86,26 @@ pub fn view_profile_onclick(router: &RouterContext, user_id: UserId) -> impl FnM
 }
 
 #[inline_props]
-pub fn ProfileImage(cx: Scope, post: &PublicPost) -> Element {
-    let router = use_router(cx);
+pub fn ProfileImage(post: &PublicPost) -> Element {
+    let router = use_router();
     let poster_info = &post.by_user;
-    let profile_img_src = &poster_info.profile_image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
+    let profile_img_src = &poster_info
+        .profile_image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
 
-    cx.render(rsx! {
+    rsx! {
         img {
             class: "profile-portrait cursor-pointer",
             onclick: view_profile_onclick(router, post.by_user.id),
             src: "{profile_img_src}",
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn Header(cx: Scope, post: &PublicPost) -> Element {
+pub fn Header(post: &PublicPost) -> Element {
     let (post_date, post_time) = {
         let date = post.time_posted.format("%Y-%m-%d");
         let time = post.time_posted.format("%H-%M-%S");
@@ -105,7 +119,7 @@ pub fn Header(cx: Scope, post: &PublicPost) -> Element {
 
     let handle = &post.by_user.handle;
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "flex flex-row justify-between",
             div { class: "cursor-pointer", onclick: move |_| (),
                 div { "{display_name}" }
@@ -116,20 +130,20 @@ pub fn Header(cx: Scope, post: &PublicPost) -> Element {
                 div { "{post_time}" }
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
-    let post_manager = use_post_manager(cx);
-    let _router = use_router(cx);
+pub fn PublicPostEntry(post_id: PostId) -> Element {
+    let post_manager = use_post_manager();
+    let _router = use_router();
 
     let this_post = {
         let post = post_manager.read().get(post_id).unwrap().clone();
-        use_state(cx, || post)
+        use_state(|| post)
     };
 
-    cx.render(rsx! {
+    rsx! {
         div {
             key: "{this_post.id.to_string()}",
             class: "grid grid-cols[50px_1fr] gap-1 mb-4",
@@ -141,5 +155,5 @@ pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
                 hr {}
             }
         }
-    })
+    }
 }

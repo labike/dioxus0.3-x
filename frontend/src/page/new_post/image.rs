@@ -1,16 +1,16 @@
 #![allow(non_snake_case)]
 
+use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
+use crate::util::ApiClient;
+use crate::{async_handler, fetch_json, maybe_class, page, util};
 use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
-use web_sys::HtmlInputElement;
 use uchat_domain::post::Caption;
-use crate::{async_handler, fetch_json, maybe_class, page, util};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{Image, ImageKind, NewPostOptions};
-use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
-use crate::util::ApiClient;
+use web_sys::HtmlInputElement;
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct PageState {
@@ -27,7 +27,7 @@ impl PageState {
         }
 
         if self.image.is_none() {
-            return false
+            return false;
         }
 
         true
@@ -35,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn CaptionInput(page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Caption;
 
     let max_chars = Caption::MAX_CHARS;
@@ -45,7 +45,7 @@ pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
         page_state.read().caption.len() > max_chars
     );
 
-    cx.render(rsx! {
+    rsx! {
         div {
             label { r#for: "caption",
                 div { class: "flex flex-row justify-between",
@@ -62,14 +62,14 @@ pub fn CaptionInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 oninput: move |ev| { page_state.with_mut(|state| state.caption = ev.data.value.clone()) },
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
-    let toaster = use_toaster(cx);
+pub fn ImageInput(page_state: UseRef<PageState>) -> Element {
+    let toaster = use_toaster();
 
-    cx.render(rsx! {
+    rsx! {
         div {
             label { r#for: "image-input", "Uplaod Image" }
             input {
@@ -103,11 +103,11 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 },
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn ImagePreview(page_state: UseRef<PageState>) -> Element {
     let image_data = page_state.read().clone().image;
     let Preview = if let Some(ref image) = image_data {
         rsx! {
@@ -122,22 +122,21 @@ pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element {
         }
     };
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "flex flex-row justify-center", Preview {} }
-    })
+    }
 }
 
-pub fn NewImage(cx: Scope) -> Element {
+pub fn NewImage() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router(cx);
-    let toaster = use_toaster(cx);
+    let router = use_router();
+    let toaster = use_toaster();
 
-    let page_state = use_ref(cx, PageState::default);
+    let page_state = use_ref(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        &cx,
         [api_client, page_state, toaster, router],
         move |_| async move {
             let request_data = NewPost {
@@ -153,8 +152,9 @@ pub fn NewImage(cx: Scope) -> Element {
                     kind: {
                         let image = &page_state.read().image;
                         ImageKind::DataUrl(image.clone().unwrap())
-                    }
-                }.into(),
+                    },
+                }
+                .into(),
                 options: NewPostOptions::default(),
             };
 
@@ -165,15 +165,17 @@ pub fn NewImage(cx: Scope) -> Element {
                     toaster.write().success("Posted!", Duration::seconds(3));
                     // 禁止返回post
                     router.replace_route(page::HOME, None, None);
-                },
+                }
                 Err(e) => {
-                    toaster.write().error(format!("Post failed: {e}"), Duration::seconds(3));
-                },
+                    toaster
+                        .write()
+                        .error(format!("Post failed: {e}"), Duration::seconds(3));
+                }
             }
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         Appbar { title: "Image",
             AppbarImgButton {
                 click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
@@ -216,5 +218,5 @@ pub fn NewImage(cx: Scope) -> Element {
                 "Post"
             }
         }
-    })
+    }
 }

@@ -1,17 +1,18 @@
 #![allow(non_snake_case)]
 
 use crate::prelude::*;
+use crate::{maybe_class, page};
 use dioxus::prelude::*;
 use dioxus_router::use_route;
-use crate::{maybe_class, page};
 
 #[inline_props]
-pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
-    let router = use_router(cx);
+pub fn NewPostPopup(hide: UseState<bool>) -> Element {
+    let router = use_router();
     let hide_class = maybe_class!("hidden", *hide.get());
-    const BUTTON_CLASS: &str = "flex gap-4 justify-center items-center w-full h-12 border-y navbar-border-color";
+    const BUTTON_CLASS: &str =
+        "flex gap-4 justify-center items-center w-full h-12 border-y navbar-border-color";
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "flex flex-col absolute right-0 bottom-[var(--navbar-height)] w-28 items-center {hide_class} navbar-bg-color text-white text-sm",
             div {
@@ -45,7 +46,7 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
                 span {"Chat"}
             }
         }
-    })
+    }
 }
 
 #[derive(Props)]
@@ -57,14 +58,10 @@ pub struct NavButtonProps {
     children: Element,
 }
 
-pub fn NavButton(
-    cx: Scope<NavButtonProps>
-) -> Element {
-    let selected_bgcolor = maybe_class!("bg-slate-500", matches!(
-        cx.props.highlight, Some(true)
-    ));
+pub fn NavButton(cx: Scope<NavButtonProps>) -> Element {
+    let selected_bgcolor = maybe_class!("bg-slate-500", matches!(cx.props.highlight, Some(true)));
 
-    cx.render(rsx! {
+    rsx! {
         button {
             class: "cursor-pointer flex flex-col items-center justify-center h-full {selected_bgcolor}",
             onclick: move |ev| cx.props.onclick.call(ev),
@@ -80,16 +77,16 @@ pub fn NavButton(
             },
             &cx.props.children
         }
-    })
+    }
 }
-pub fn Navbar(cx: Scope) -> Element {
-    let hide_new_post_popup = use_state(cx, || true);
-    let _router = use_router(cx);
-    let route = use_route(cx);
-    let hide_navbar = use_state(cx, || false);
+pub fn Navbar() -> Element {
+    let hide_new_post_popup = use_state(|| true);
+    let _router = use_router();
+    let route = use_route();
+    let hide_navbar = use_state(|| false);
     let current_route = route.url().path().to_string();
 
-    use_effect(cx, (&current_route,), |(current_route,)| {
+    use_effect((&current_route,), |(current_route,)| {
         to_owned![hide_navbar];
         async move {
             let should_hide = current_route == page::LOGIN || current_route == page::REGISTER;
@@ -101,7 +98,7 @@ pub fn Navbar(cx: Scope) -> Element {
         return None;
     }
 
-    cx.render(rsx! {
+    rsx! {
         nav {
             class: "max-w-[var(--content-max-width)] h-[var(-navbar-height)] fixed bottom-0 left-0 right-0 mx-auto py-2 navbar-bg-color navbar-border-color",
             div {
@@ -129,5 +126,5 @@ pub fn Navbar(cx: Scope) -> Element {
                 },
             }
         }
-    })
+    }
 }

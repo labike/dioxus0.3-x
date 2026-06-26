@@ -1,17 +1,17 @@
 #![allow(non_snake_case)]
 
-use std::collections::BTreeMap;
+use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
+use crate::util::ApiClient;
+use crate::{async_handler, fetch_json, maybe_class, page};
 use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use uchat_domain::ids::PollChoiceId;
 use uchat_domain::post::{PollChoiceDescription, PollHeading};
-use crate::{async_handler, fetch_json, maybe_class, page};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{NewPostOptions, Poll, PollChoice};
-use crate::prelude::{app_bar, use_toaster, Appbar, AppbarImgButton};
-use crate::util::ApiClient;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageState {
@@ -30,7 +30,7 @@ impl Default for PageState {
                 map.insert(1, "".to_string());
                 map
             },
-            next_id: 2
+            next_id: 2,
         }
     }
 }
@@ -45,9 +45,13 @@ impl PageState {
             return false;
         }
 
-        if self.poll_choices.values().map(
-            PollChoiceDescription::try_new
-        ).collect::<Result<Vec<PollChoiceDescription>, _>>().is_err() {
+        if self
+            .poll_choices
+            .values()
+            .map(PollChoiceDescription::try_new)
+            .collect::<Result<Vec<PollChoiceDescription>, _>>()
+            .is_err()
+        {
             return false;
         }
 
@@ -65,7 +69,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
     let max_chars = PollHeading::MAX_CHARS;
 
     let wrong_len = maybe_class!(
@@ -73,7 +77,7 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
         page_state.read().heading.len() > max_chars || page_state.read().heading.is_empty()
     );
 
-    cx.render(rsx! {
+    rsx! {
         div {
             label {
                 r#for: "heading",
@@ -97,11 +101,11 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 }
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
     let choices = page_state.read().poll_choices.iter().map(|(&key, choice)| {
         let choice = choice.clone();
         let max_chars = PollChoiceDescription::MAX_CHARS;
@@ -140,7 +144,7 @@ pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element {
         }
     }).collect::<Vec<LazyNodes>>();
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "flex flex-col gap-2",
             "Poll Choices",
@@ -160,19 +164,18 @@ pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 }
             }
         }
-    })
+    }
 }
-pub fn NewPoll(cx: Scope) -> Element {
+pub fn NewPoll() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router(cx);
-    let toaster = use_toaster(cx);
+    let router = use_router();
+    let toaster = use_toaster();
 
-    let page_state = use_ref(cx, PageState::default);
+    let page_state = use_ref(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        &cx,
         [api_client, page_state, toaster, router],
         move |_| async move {
             let request_data = NewPost {
@@ -203,17 +206,23 @@ pub fn NewPoll(cx: Scope) -> Element {
                         //     choice
                         // }).collect::<Vec<PollChoice>>()
 
-                        page_state.read().poll_choices.values().map(|choice| {
-                            let id = PollChoiceId::new();
-                            PollChoice {
-                                id,
-                                num_votes: 0,
-                                description: PollChoiceDescription::try_new(choice).unwrap()
-                            }
-                        }).collect::<Vec<PollChoice>>()
+                        page_state
+                            .read()
+                            .poll_choices
+                            .values()
+                            .map(|choice| {
+                                let id = PollChoiceId::new();
+                                PollChoice {
+                                    id,
+                                    num_votes: 0,
+                                    description: PollChoiceDescription::try_new(choice).unwrap(),
+                                }
+                            })
+                            .collect::<Vec<PollChoice>>()
                     },
                     voted: None,
-                }.into(),
+                }
+                .into(),
                 options: NewPostOptions::default(),
             };
 
@@ -221,18 +230,22 @@ pub fn NewPoll(cx: Scope) -> Element {
 
             match response {
                 Ok(_) => {
-                    toaster.write().success("Poll Success!", Duration::seconds(3));
+                    toaster
+                        .write()
+                        .success("Poll Success!", Duration::seconds(3));
                     // 禁止返回post
                     router.replace_route(page::HOME, None, None);
-                },
+                }
                 Err(e) => {
-                    toaster.write().error(format!("Poll failed: {e}"), Duration::seconds(3));
-                },
+                    toaster
+                        .write()
+                        .error(format!("Poll failed: {e}"), Duration::seconds(3));
+                }
             }
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         Appbar {
             title: "Poll",
             AppbarImgButton {
@@ -279,5 +292,5 @@ pub fn NewPoll(cx: Scope) -> Element {
                 "Poll"
             }
         }
-    })
+    }
 }

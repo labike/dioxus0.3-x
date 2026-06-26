@@ -1,16 +1,16 @@
 #![allow(non_snake_case)]
 
+use crate::elements::post::quick_respond::QuickRespond;
+use crate::fetch_json;
 use crate::prelude::*;
+use crate::util::ApiClient;
 use dioxus::prelude::*;
 use uchat_domain::ids::PostId;
 use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, React, ReactOk};
 use uchat_endpoint::post::types::{BookmarkAction, BootsAction, LikeStatus};
-use crate::elements::post::quick_respond::QuickRespond;
-use crate::fetch_json;
-use crate::util::ApiClient;
 
 #[inline_props]
-pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> Element {
+pub fn QuickRespondBox(post_id: PostId, opened: UseState<bool>) -> Element {
     let element = match *opened.get() {
         true => {
             to_owned![opened, post_id];
@@ -21,21 +21,20 @@ pub fn QuickRespondBox(cx: Scope, post_id: PostId, opened: UseState<bool>) -> El
         false => None,
     };
 
-    cx.render(rsx! {
+    rsx! {
         element {}
-
-    })
+    }
 }
 
 #[inline_props]
-pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
-    let post_manager = use_post_manager(cx);
+pub fn Actionbar(post_id: PostId) -> Element {
+    let post_manager = use_post_manager();
     let this_post = post_manager.read();
     let this_post = this_post.get(post_id).unwrap();
     let this_post_id = this_post.id;
-    let quick_respond_opened = use_state(cx, || false).clone();
+    let quick_respond_opened = use_state(|| false).clone();
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "flex flex-row justify-between w-full opacity-70 mt-4",
             Boost {
                 post_id: this_post_id,
@@ -53,13 +52,13 @@ pub fn Actionbar(cx: Scope, post_id: PostId) -> Element {
         }
 
         QuickRespondBox { post_id: this_post_id, opened: quick_respond_opened }
-    })
+    }
 }
 
 #[inline_props]
-pub fn Bookmark(cx: Scope, post_id: PostId, bookmarked: bool) -> Element {
-    let post_manager = use_post_manager(cx);
-    let toaster = use_toaster(cx);
+pub fn Bookmark(post_id: PostId, bookmarked: bool) -> Element {
+    let post_manager = use_post_manager();
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
 
     let icon = match bookmarked {
@@ -68,7 +67,6 @@ pub fn Bookmark(cx: Scope, post_id: PostId, bookmarked: bool) -> Element {
     };
 
     let bookmark_onclick = async_handler!(
-        &cx,
         [api_client, post_manager, toaster, post_id],
         move |_| async move {
             let action = match post_manager.read().get(&post_id).unwrap().bookmarked {
@@ -76,42 +74,33 @@ pub fn Bookmark(cx: Scope, post_id: PostId, bookmarked: bool) -> Element {
                 false => BookmarkAction::Add,
             };
 
-            let request_data = Bookmark {
-                action,
-                post_id
-            };
+            let request_data = Bookmark { action, post_id };
 
             match fetch_json!(<BookmarkOk>, api_client, request_data) {
                 Ok(res) => {
-                    post_manager.write().update(post_id, |post| {
-                        post.bookmarked = res.status.into()
-                    });
+                    post_manager
+                        .write()
+                        .update(post_id, |post| post.bookmarked = res.status.into());
                 }
                 Err(e) => toaster.write().error(
                     format!("Failed to bookmark post: {}", e),
                     chrono::Duration::seconds(3),
-                )
+                ),
             }
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "cursor-pointer", onclick: bookmark_onclick,
             img { class: "actionbar-icon", src: "{icon}" }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn LikeDislike(
-    cx: Scope,
-    post_id: PostId,
-    like_status: LikeStatus,
-    likes: i64,
-    dislikes: i64
-) -> Element {
-    let post_manager = use_post_manager(cx);
-    let toaster = use_toaster(cx);
+pub fn LikeDislike(post_id: PostId, like_status: LikeStatus, likes: i64, dislikes: i64) -> Element {
+    let post_manager = use_post_manager();
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
 
     let like_icon = match like_status {
@@ -125,7 +114,6 @@ pub fn LikeDislike(
     };
 
     let like_onclick = async_handler!(
-        &cx,
         [api_client, post_manager, toaster, post_id],
         move |like_status| async move {
             let like_status = {
@@ -138,7 +126,7 @@ pub fn LikeDislike(
 
             let request_data = React {
                 like_status,
-                post_id
+                post_id,
             };
 
             match fetch_json!(<ReactOk>, api_client, request_data) {
@@ -152,12 +140,12 @@ pub fn LikeDislike(
                 Err(e) => toaster.write().error(
                     format!("Failed to react post: {}", e),
                     chrono::Duration::seconds(3),
-                )
+                ),
             }
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "cursor-pointer",
             onclick: move |_| like_onclick(LikeStatus::Like),
@@ -170,13 +158,13 @@ pub fn LikeDislike(
             img { class: "actionbar-icon", src: "{dislike_icon}" }
             div { class: "text-center", "{dislikes}" }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element {
-    let post_manager = use_post_manager(cx);
-    let toaster = use_toaster(cx);
+pub fn Boost(post_id: PostId, boosted: bool, boosts: i64) -> Element {
+    let post_manager = use_post_manager();
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
 
     let icon = match boosted {
@@ -185,7 +173,6 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
     };
 
     let boost_onclick = async_handler!(
-        &cx,
         [api_client, post_manager, toaster, post_id],
         move |_| async move {
             let action = match post_manager.read().get(&post_id).unwrap().boosted {
@@ -193,10 +180,7 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
                 false => BootsAction::Add,
             };
 
-            let request_data = Boost {
-                action,
-                post_id
-            };
+            let request_data = Boost { action, post_id };
 
             match fetch_json!(<BoostOk>, api_client, request_data) {
                 Ok(res) => {
@@ -212,7 +196,7 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
                 Err(e) => toaster.write().error(
                     format!("Failed to boosts post: {}", e),
                     chrono::Duration::seconds(3),
-                )
+                ),
             }
         }
     );
@@ -226,18 +210,18 @@ pub fn Boost(cx: Scope, post_id: PostId, boosted: bool, boosts: i64) -> Element 
 }
 
 #[inline_props]
-pub fn Comment(cx: Scope, opened: UseState<bool>) -> Element {
+pub fn Comment(opened: UseState<bool>) -> Element {
     let comment_onclick = sync_handler!([opened], move |_| {
         let current = *opened.get();
         opened.set(!current);
     });
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "cursor-pointer", onclick: comment_onclick,
             img {
                 class: "actionbar-icon",
                 src: "/static/icons/icon-messages.svg",
             }
         }
-    })
+    }
 }

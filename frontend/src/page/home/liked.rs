@@ -1,22 +1,24 @@
 #![allow(non_snake_case)]
+use crate::elements::toaster::use_toaster;
+use crate::prelude::{app_bar, use_post_manager, Appbar, AppbarImgButton};
+use crate::util::ApiClient;
+use crate::{fetch_json, page};
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use uchat_endpoint::trending::endpoint::{LikePosts, LikePostsOk};
-use crate::elements::toaster::use_toaster;
-use crate::{fetch_json, page};
-use crate::prelude::{app_bar, use_post_manager, Appbar, AppbarImgButton};
-use crate::util::ApiClient;
 
-pub fn HomeLiked(cx: Scope) -> Element {
-    let toaster = use_toaster(cx);
+pub fn HomeLiked() -> Element {
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
-    let post_manager = use_post_manager(cx);
-    let router = use_router(cx);
+    let post_manager = use_post_manager();
+    let router = use_router();
 
     let _fetch_posts = {
         to_owned![api_client, toaster, post_manager];
-        use_future(cx, (), |_| async move {
-            toaster.write().info("Retrieving like posts", chrono::Duration::seconds(3));
+        use_future((), |_| async move {
+            toaster
+                .write()
+                .info("Retrieving like posts", chrono::Duration::seconds(3));
 
             post_manager.write().clear();
             let response = fetch_json!(<LikePostsOk>, api_client, LikePosts);
@@ -26,7 +28,7 @@ pub fn HomeLiked(cx: Scope) -> Element {
                 Err(e) => toaster.write().error(
                     format!("Failed to retrive posts: {e}"),
                     chrono::Duration::seconds(3),
-                )
+                ),
             }
         })
     };
@@ -60,7 +62,7 @@ pub fn HomeLiked(cx: Scope) -> Element {
         }
     };
 
-    cx.render(rsx! {
+    rsx! {
         Appbar {
             title: "Liked",
             AppbarImgButton {
@@ -85,5 +87,5 @@ pub fn HomeLiked(cx: Scope) -> Element {
             },
         },
         Posts
-    })
+    }
 }

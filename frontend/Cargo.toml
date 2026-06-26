@@ -10,7 +10,7 @@ cfg-if = "1.0.4"
 time = "0.3.51"
 chrono = { version = "0.4.45", features = ["serde"] }
 console_log = { version = "1.0.0", optional = true, features = ["color"] }
-dioxus = { version = "0.7.9", default-features = false}
+dioxus = { version = "0.7.9", default-features = false, features = ["macro", "hooks", "html"]}
 dioxus-router = { version = "0.7.9" }
 dioxus-web = "0.7.9"
 fermi = "0.4.3"

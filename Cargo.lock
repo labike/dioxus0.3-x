@@ -840,6 +840,9 @@ checksum = "7c01ecf7ddbae18a419ad3d83c486101a85ffc5740ea09cdd0f09a30dc12170d"
 dependencies = [
  "dioxus-config-macros",
  "dioxus-core 0.7.9",
+ "dioxus-core-macro",
+ "dioxus-hooks",
+ "dioxus-html",
  "subsecond",
 ]
 

@@ -1,22 +1,18 @@
+use crate::prelude::use_toaster;
+use crate::util::ApiClient;
+use crate::{async_handler, fetch_json, maybe_class};
 use chrono::Duration;
 use dioxus::prelude::*;
 use uchat_domain::post::Message;
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{Chat, NewPostOptions};
-use crate::{async_handler, fetch_json, maybe_class};
-use crate::prelude::use_toaster;
-use crate::util::ApiClient;
 
 fn can_submit(message: &str) -> bool {
     message.len() <= Message::MAX_CHARS && !message.is_empty()
 }
 
 #[inline_props]
-pub fn MessageInput(
-    cx: Scope,
-    message: &str,
-    on_input: EventHandler<FormEvent>,
-) -> Element {
+pub fn MessageInput(message: &str, on_input: EventHandler<FormEvent>) -> Element {
     let max_chars = Message::MAX_CHARS;
 
     let wrong_len = maybe_class!("err-text-color", !can_submit(message));
@@ -38,32 +34,36 @@ pub fn MessageInput(
 }
 
 #[inline_props]
-pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element {
+pub fn QuickRespond(opened: UseState<bool>) -> Element {
     let api_client = ApiClient::global();
-    let toaster = use_toaster(cx);
+    let toaster = use_toaster();
 
-    let message = use_state(cx, || "".to_string());
+    let message = use_state(|| "".to_string());
 
     let form_onsubmit = async_handler!(
-        &cx,
         [api_client, toaster, message, opened],
         move |_| async move {
             let request_data = NewPost {
                 content: Chat {
                     heading: None,
                     message: Message::try_new(message.get()).unwrap(),
-                }.into(),
+                }
+                .into(),
                 options: NewPostOptions::default(),
             };
 
             let response = fetch_json!(<NewPostOk>, api_client, request_data);
             match response {
                 Ok(_) => {
-                    toaster.write().success("Reply success", Duration::seconds(3));
+                    toaster
+                        .write()
+                        .success("Reply success", Duration::seconds(3));
                     opened.set(false);
                 }
                 Err(e) => {
-                    toaster.write().error(format!("Reply failed: {e}"), Duration::seconds(3));
+                    toaster
+                        .write()
+                        .error(format!("Reply failed: {e}"), Duration::seconds(3));
                 }
             }
         }
@@ -77,7 +77,7 @@ pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element {
 
     let submit_btn_style = maybe_class!("btn-disabled", !can_submit(message.get()));
 
-    cx.render(rsx! {
+    rsx! {
         form { onsubmit: form_onsubmit, prevent_default: "onsubmit",
             div { class: "w-full flex flex-col justify-end",
                 MessageInput {
@@ -92,5 +92,5 @@ pub fn QuickRespond(cx: Scope, opened: UseState<bool>) -> Element {
                 }
             }
         }
-    })
+    }
 }

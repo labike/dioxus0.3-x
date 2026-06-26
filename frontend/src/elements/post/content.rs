@@ -1,20 +1,20 @@
 #![allow(non_snake_case)]
 
-use std::collections::HashSet;
-use dioxus::prelude::*;
-use itertools::Itertools;
-use uchat_domain::ids::{PollChoiceId, PostId};
-use uchat_endpoint::post::endpoint::{Vote, VoteOk};
-use uchat_endpoint::post::types::{Image as EndpointImage, Chat as EndpointChat, Poll as EndpointPoll, ImageKind, PublicPost, VoteCast};
-use crate::{fetch_json, maybe_class};
 use crate::prelude::*;
 use crate::util::ApiClient;
+use crate::{fetch_json, maybe_class};
+use dioxus::prelude::*;
+use itertools::Itertools;
+use std::collections::HashSet;
+use uchat_domain::ids::{PollChoiceId, PostId};
+use uchat_endpoint::post::endpoint::{Vote, VoteOk};
+use uchat_endpoint::post::types::{
+    Chat as EndpointChat, Image as EndpointImage, ImageKind, Poll as EndpointPoll, PublicPost,
+    VoteCast,
+};
 
 #[inline_props]
-pub fn Chat(
-    cx: Scope,
-    content: &EndpointChat,
-) -> Element {
+pub fn Chat(content: &EndpointChat) -> Element {
     let Heading = content.heading.as_ref().map(|heading| {
         rsx! {
             div {
@@ -24,38 +24,37 @@ pub fn Chat(
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         div {
             Heading,
             p {
                 "{content.message.as_ref()}"
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn Image(
-    cx: Scope,
-    content: &EndpointImage,
-) -> Element {
+pub fn Image(content: &EndpointImage) -> Element {
     let url = if let ImageKind::Url(url) = &content.kind {
         url
     } else {
         return cx.render(rsx! {
             "image not found"
-        })
+        });
     };
 
-    let Caption = content.caption.as_ref().map(|caption| rsx! {
-        figcaption {
-            em {
-                "{caption.as_ref()}"
+    let Caption = content.caption.as_ref().map(|caption| {
+        rsx! {
+            figcaption {
+                em {
+                    "{caption.as_ref()}"
+                }
             }
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         figure {
             class: "flex flex-col gap2",
             Caption,
@@ -64,46 +63,46 @@ pub fn Image(
                 src: "{url}"
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn Poll(
-    cx: Scope,
-    post_id: PostId,
-    content: &EndpointPoll,
-) -> Element {
-    let toaster = use_toaster(cx);
+pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
 
     let vote_onclick = async_handler!(
-        &cx,
         [api_client, toaster],
         move |post_id, choice_id| async move {
-
-            let request_data = Vote {
-                post_id,
-                choice_id
-            };
+            let request_data = Vote { post_id, choice_id };
 
             match fetch_json!(<VoteOk>, api_client, request_data) {
-                Ok(res) => {
-                    match res.cast {
-                        VoteCast::Yes => toaster.write().success("Vote Cast", chrono::Duration::seconds(3)),
-                        VoteCast::AlreadyVoted => toaster.write().info("Already Voted", chrono::Duration::seconds(3)),
-                    }
-                }
+                Ok(res) => match res.cast {
+                    VoteCast::Yes => toaster
+                        .write()
+                        .success("Vote Cast", chrono::Duration::seconds(3)),
+                    VoteCast::AlreadyVoted => toaster
+                        .write()
+                        .info("Already Voted", chrono::Duration::seconds(3)),
+                },
                 Err(e) => toaster.write().error(
                     format!("Failed to cast vote: {}", e),
                     chrono::Duration::seconds(3),
-                )
+                ),
             }
         }
     );
 
-    let total_votes = content.choices.iter().map(|choice| choice.num_votes).sum::<i64>();
+    let total_votes = content
+        .choices
+        .iter()
+        .map(|choice| choice.num_votes)
+        .sum::<i64>();
     let leader_ids = {
-        let leaders = content.choices.iter().max_set_by(|x, y| x.num_votes.cmp(&y.num_votes));
+        let leaders = content
+            .choices
+            .iter()
+            .max_set_by(|x, y| x.num_votes.cmp(&y.num_votes));
         let ids: HashSet<PollChoiceId> = HashSet::from_iter(leaders.iter().map(|choice| choice.id));
         ids
     };
@@ -151,20 +150,20 @@ pub fn Poll(
         }
     };
 
-    cx.render(rsx! {
+    rsx! {
         div {
             Heading,
             ul {
                 Choices.into_iter()
             }
         }
-    })
+    }
 }
 
 #[inline_props]
 pub fn Content(cx: Scope, post: &PublicPost) -> Element {
     use uchat_endpoint::post::types::Content as EndpointContent;
-    cx.render(rsx! {
+    rsx! {
         div {
             match &post.content {
                 EndpointContent::Chat(content) => rsx! {
@@ -185,5 +184,5 @@ pub fn Content(cx: Scope, post: &PublicPost) -> Element {
                 },
             }
         }
-    })
+    }
 }

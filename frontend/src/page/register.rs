@@ -1,12 +1,12 @@
 #![allow(non_snake_case)]
 
+use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
+use crate::prelude::*;
+use crate::util::ApiClient;
+use crate::{fetch_json, maybe_class, page};
 use dioxus::prelude::*;
 use dioxus_router::Link;
 use uchat_domain::UserFacingError;
-use crate::elements::keyed_notification_box::{KeyedNotificationBox, KeyedNotifications};
-use crate::{fetch_json, maybe_class, page};
-use crate::prelude::*;
-use crate::util::ApiClient;
 
 pub struct PageState {
     username: Signal<String>,
@@ -25,16 +25,13 @@ impl PageState {
 
     pub fn can_submit(&self) -> bool {
         !(self.form_errors.has_messages()
-        || self.username.current().is_empty()
-        || self.password.current().is_empty())
+            || self.username.current().is_empty()
+            || self.password.current().is_empty())
     }
 }
 
 #[component]
-pub fn UsernameInput(
-    state: Signal<String>,
-    oninput: EventHandler<FormEvent>,
-) -> Element {
+pub fn UsernameInput(state: Signal<String>, oninput: EventHandler<FormEvent>) -> Element {
     rsx! {
         div { class: "flex flex-col",
             label { r#for: "username", "Username" }
@@ -51,10 +48,7 @@ pub fn UsernameInput(
 }
 
 #[component]
-pub fn PasswordInput(
-    state: Signal<String>,
-    oninput: EventHandler<FormEvent>,
-) -> Element {
+pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) -> Element {
     rsx! {
         div { class: "flex flex-col",
             label { r#for: "password", "Password" }
@@ -85,23 +79,26 @@ pub fn Register() -> Element {
     // let password = use_state(cx, String::new);
 
     let page_state = use_signal(PageState::new);
-    let page_state = use_ref(cx, || page_state);
+    let page_state = use_ref(|| page_state);
 
-    let router = use_router(cx);
-    let local_profile = use_local_profile(cx);
+    let router = use_router();
+    let local_profile = use_local_profile();
 
-    let form_onsubmit = async_handler!(&cx, [api_client, page_state, router, local_profile], move |_|
-        async move {
+    let form_onsubmit = async_handler!(
+        [api_client, page_state, router, local_profile],
+        move |_| async move {
             use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
             let request_data = {
-                use uchat_domain::{Username, Password};
+                use uchat_domain::{Password, Username};
                 CreateUser {
-                    username: Username::try_new(page_state.with(
-                        |state| state.username.current().to_string())
-                    ).unwrap(),
-                    password: Password::try_new(page_state.with(
-                        |state| state.password.current().to_string())
-                    ).unwrap(),
+                    username: Username::try_new(
+                        page_state.with(|state| state.username.current().to_string()),
+                    )
+                    .unwrap(),
+                    password: Password::try_new(
+                        page_state.with(|state| state.password.current().to_string()),
+                    )
+                    .unwrap(),
                 }
             };
             let response = fetch_json!(<CreateUserOk>, api_client, request_data);
@@ -115,37 +112,32 @@ pub fn Register() -> Element {
 
                     local_profile.write().user_id = Some(res.user_id);
                     router.navigate_to(page::HOME)
-                },
-                Err(_e) => ()
+                }
+                Err(_e) => (),
             }
         }
     );
 
-    let username_oninput = sync_handler!(
-        [page_state],
-        move |ev: FormEvent| {
-            if let Err(e) = uchat_domain::Username::try_new(&ev.value) {
-                page_state.with_mut(|state| state.form_errors.set("用户名错误", e.formatted_error()));
-            } else {
-                page_state.with_mut(|state| state.form_errors.remove("用户名错误"));
-            };
-            page_state.with_mut(|state| state.username.set(ev.value.clone()));
-        }
-    );
+    let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        if let Err(e) = uchat_domain::Username::try_new(&ev.value) {
+            page_state.with_mut(|state| state.form_errors.set("用户名错误", e.formatted_error()));
+        } else {
+            page_state.with_mut(|state| state.form_errors.remove("用户名错误"));
+        };
+        page_state.with_mut(|state| state.username.set(ev.value.clone()));
+    });
 
-    let password_oninput = sync_handler!(
-        [page_state],
-        move |ev: FormEvent| {
-            if let Err(e) = uchat_domain::Password::try_new(&ev.value) {
-                page_state.with_mut(|state| state.form_errors.set("密码错误", e.formatted_error()));
-            } else {
-                page_state.with_mut(|state| state.form_errors.remove("密码错误"));
-            };
-            page_state.with_mut(|state| state.password.set(ev.value.clone()));
-        }
-    );
+    let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        if let Err(e) = uchat_domain::Password::try_new(&ev.value) {
+            page_state.with_mut(|state| state.form_errors.set("密码错误", e.formatted_error()));
+        } else {
+            page_state.with_mut(|state| state.form_errors.remove("密码错误"));
+        };
+        page_state.with_mut(|state| state.password.set(ev.value.clone()));
+    });
 
-    let submit_btn_style = maybe_class!("btn-disabled", !page_state.with(|state| state.can_submit()));
+    let submit_btn_style =
+        maybe_class!("btn-disabled", !page_state.with(|state| state.can_submit()));
 
     // let submit_btn_style = match page_state.with(|state| state.can_submit()) {
     //     false => "btn-disabled",

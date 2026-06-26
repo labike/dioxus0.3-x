@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
 
-use std::collections::hash_map::Iter;
-use std::collections::HashMap;
 use chrono::{DateTime, Duration, Utc};
 use dioxus::prelude::*;
 use fermi::{use_atom_ref, UseAtomRef};
+use std::collections::hash_map::Iter;
+use std::collections::HashMap;
 
-pub fn use_toaster(cx: &ScopeState) -> &UseAtomRef<Toaster> {
-    use_atom_ref(cx, crate::app::TOASTER)
+pub fn use_toaster() -> &UseAtomRef<Toaster> {
+    use_atom_ref(&crate::app::TOASTER)
 }
 
 pub enum ToastKind {
@@ -19,7 +19,7 @@ pub enum ToastKind {
 pub struct Toast {
     pub message: String,
     pub expires: DateTime<Utc>,
-    pub kind: ToastKind
+    pub kind: ToastKind,
 }
 
 #[derive(Default)]
@@ -32,7 +32,6 @@ impl Toaster {
     pub fn increment_id(&mut self) {
         self.next_id += 1;
     }
-
 
     pub fn push(&mut self, toast: Toast) {
         self.toasts.insert(self.next_id, toast);
@@ -47,7 +46,7 @@ impl Toaster {
         let toast = Toast {
             message: message.into(),
             expires: Utc::now() + duration,
-            kind: ToastKind::Success
+            kind: ToastKind::Success,
         };
         self.push(toast);
     }
@@ -56,7 +55,7 @@ impl Toaster {
         let toast = Toast {
             message: message.into(),
             expires: Utc::now() + duration,
-            kind: ToastKind::Info
+            kind: ToastKind::Info,
         };
         self.push(toast);
     }
@@ -65,7 +64,7 @@ impl Toaster {
         let toast = Toast {
             message: message.into(),
             expires: Utc::now() + duration,
-            kind: ToastKind::Error
+            kind: ToastKind::Error,
         };
         self.push(toast);
     }
@@ -77,7 +76,7 @@ impl Toaster {
 
 #[derive(Props)]
 pub struct ToastRootProps {
-    toaster: &UseAtomRef<Toaster>
+    toaster: &UseAtomRef<Toaster>,
 }
 
 pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
@@ -106,31 +105,37 @@ pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
 
     let total_toasts = &toaster.read().toasts.len();
 
-    let _remove_expired = use_future(cx, (total_toasts,), |(_total_toasts,)| {
+    let _remove_expired = use_future((total_toasts,), |(_total_toasts,)| {
         let toaster = toaster.clone();
         async move {
             while !toaster.read().toasts.is_empty() {
                 // if total_toasts == 0 {
                 //     break;
                 // }
-                let expired_ids = toaster.read().iter().filter_map(|(&id, toast)| {
-                    if Utc::now() > toast.expires {
-                        Some(id)
-                    } else {
-                        None
-                    }
-                }).collect::<Vec<usize>>();
+                let expired_ids = toaster
+                    .read()
+                    .iter()
+                    .filter_map(|(&id, toast)| {
+                        if Utc::now() > toast.expires {
+                            Some(id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>();
 
-                expired_ids.iter().for_each(|&id| toaster.write().remove(id));
+                expired_ids
+                    .iter()
+                    .for_each(|&id| toaster.write().remove(id));
 
                 gloo_timers::future::TimeoutFuture::new(200_u32).await;
             }
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "fixed bottom-[var(--navbar-height)] w-screen max-w-[var(--content-max-width)]",
             div { class: "flex flex-col gap-5 px-5 mb-5", ToastElements {} }
         }
-    })
+    }
 }

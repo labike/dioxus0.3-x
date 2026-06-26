@@ -1,28 +1,27 @@
 #![allow(non_snake_case)]
 
+use crate::elements::post::PostManager;
+use crate::elements::sidebar::{Sidebar, SidebarManager};
+use crate::elements::toaster::{ToastRoot, Toaster};
+use crate::elements::Navbar;
+use crate::prelude::{use_local_profile, use_toaster, LocalProfile};
+use crate::util::ApiClient;
+use crate::{fetch_json, page};
 use dioxus::prelude::*;
 use dioxus_router::{use_router, Router};
 use fermi::{use_init_atom_root, AtomRef};
 use uchat_endpoint::user::endpoint::{GetMyProfile, GetMyProfileOk};
-use crate::elements::Navbar;
-use crate::elements::post::PostManager;
-use crate::elements::toaster::{ToastRoot, Toaster};
-use crate::{fetch_json, page};
-use crate::elements::sidebar::{Sidebar, SidebarManager};
-use crate::prelude::{use_local_profile, use_toaster, LocalProfile};
-use crate::util::ApiClient;
 
 pub static TOASTER: AtomRef<Toaster> = |_| Toaster::default();
 pub static POSTMANAGER: AtomRef<PostManager> = |_| PostManager::default();
 pub static LOCAL_PROFILE: AtomRef<LocalProfile> = |_| LocalProfile::default();
 pub static SIDEBAR: AtomRef<SidebarManager> = |_| SidebarManager::default();
 
-
-pub fn Init(cx: Scope) -> Element {
-    let local_profile = use_local_profile(cx);
-    let toaster = use_toaster(cx);
+pub fn Init() -> Element {
+    let local_profile = use_local_profile();
+    let toaster = use_toaster();
     let api_client = ApiClient::global();
-    let router = use_router(cx);
+    let router = use_router();
 
     let _fetch_local_profile = {
         to_owned![api_client, toaster, router, local_profile];
@@ -33,7 +32,7 @@ pub fn Init(cx: Scope) -> Element {
                 Ok(res) => {
                     local_profile.write().image = res.profile_image;
                     local_profile.write().user_id = Some(res.user_id);
-                },
+                }
                 Err(_e) => {
                     toaster.write().error(
                         "please login or create account.",
@@ -47,10 +46,10 @@ pub fn Init(cx: Scope) -> Element {
     None
 }
 
-pub fn App(cx: Scope) -> Element {
-    use_init_atom_root(cx);
-    let toaster = use_toaster(cx);
-    cx.render(rsx!{
+pub fn App() -> Element {
+    use_init_atom_root();
+    let toaster = use_toaster();
+    rsx! {
         Router {
             Init {}
             Sidebar {}
@@ -69,5 +68,5 @@ pub fn App(cx: Scope) -> Element {
             ToastRoot { toaster }
             Navbar {}
         }
-    })
+    }
 }

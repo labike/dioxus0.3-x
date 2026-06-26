@@ -1,16 +1,16 @@
 #![allow(non_snake_case)]
 
+use crate::elements::app_bar::AppbarImgButton;
+use crate::prelude::{app_bar, use_toaster, Appbar};
+use crate::util::ApiClient;
+use crate::{async_handler, fetch_json, maybe_class, page};
 use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use uchat_domain::post::{Heading, Message};
-use crate::{async_handler, fetch_json, maybe_class, page};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
 use uchat_endpoint::post::types::{Chat, NewPostOptions};
-use crate::elements::app_bar::AppbarImgButton;
-use crate::prelude::{app_bar, use_toaster, Appbar};
-use crate::util::ApiClient;
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct PageState {
@@ -35,7 +35,7 @@ impl PageState {
 }
 
 #[inline_props]
-pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn MessageInput(page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Message;
 
     let max_chars = Message::MAX_CHARS;
@@ -45,9 +45,10 @@ pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
         page_state.read().message.len() > max_chars || page_state.read().message.is_empty()
     );
 
-    cx.render(rsx! {
+    rsx! {
         div {
-            label { r#for: "message",
+            label {
+                r#for: "message",
                 div { class: "flex flex-row justify-between",
                     span { "Message" }
                     span { class: "text-right {wrong_len}",
@@ -63,11 +64,11 @@ pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 oninput: move |ev| { page_state.with_mut(|state| state.message = ev.data.value.clone()) },
             }
         }
-    })
+    }
 }
 
 #[inline_props]
-pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
+pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
     use uchat_domain::post::Heading;
 
     let max_chars = Heading::MAX_CHARS;
@@ -77,7 +78,7 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
         page_state.read().heading.len() > max_chars || page_state.read().heading.is_empty()
     );
 
-    cx.render(rsx! {
+    rsx! {
         div {
             label { r#for: "heading",
                 div { class: "flex flex-row justify-between",
@@ -94,20 +95,19 @@ pub fn HeadingInput(cx: Scope, page_state: UseRef<PageState>) -> Element {
                 oninput: move |ev| { page_state.with_mut(|state| state.heading = ev.data.value.clone()) },
             }
         }
-    })
+    }
 }
 
-pub fn NewChat(cx: Scope) -> Element {
+pub fn NewChat() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router(cx);
-    let toaster = use_toaster(cx);
+    let router = use_router();
+    let toaster = use_toaster();
 
-    let page_state = use_ref(cx, PageState::default);
+    let page_state = use_ref(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        &cx,
         [api_client, page_state, toaster, router],
         move |_| async move {
             let request_data = NewPost {
@@ -121,7 +121,8 @@ pub fn NewChat(cx: Scope) -> Element {
                         }
                     },
                     message: Message::try_new(&page_state.read().message).unwrap(),
-                }.into(),
+                }
+                .into(),
                 options: NewPostOptions::default(),
             };
 
@@ -132,15 +133,17 @@ pub fn NewChat(cx: Scope) -> Element {
                     toaster.write().success("Posted!", Duration::seconds(3));
                     // 禁止返回post
                     router.replace_route(page::HOME, None, None);
-                },
+                }
                 Err(e) => {
-                    toaster.write().error(format!("Post failed: {e}"), Duration::seconds(3));
-                },
+                    toaster
+                        .write()
+                        .error(format!("Post failed: {e}"), Duration::seconds(3));
+                }
             }
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         Appbar { title: "Chat",
             AppbarImgButton {
                 click_handler: move |_| (),
@@ -182,5 +185,5 @@ pub fn NewChat(cx: Scope) -> Element {
                 "Post"
             }
         }
-    })
+    }
 }

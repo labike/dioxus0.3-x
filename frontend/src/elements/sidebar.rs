@@ -1,17 +1,17 @@
 #![allow(non_snake_case)]
 
+use crate::page;
 use crate::prelude::*;
 use dioxus::prelude::*;
 use fermi::{use_atom_ref, UseAtomRef};
-use crate::page;
 
-pub fn use_sidebar(cx: &ScopeState) -> &UseAtomRef<SidebarManager> {
-    use_atom_ref(cx, crate::app::SIDEBAR)
+pub fn use_sidebar() -> &UseAtomRef<SidebarManager> {
+    use_atom_ref(&crate::app::SIDEBAR)
 }
 
 #[derive(Default)]
 pub struct SidebarManager {
-    is_open: bool
+    is_open: bool,
 }
 
 impl SidebarManager {
@@ -28,10 +28,10 @@ impl SidebarManager {
     }
 }
 
-pub fn Sidebar(cx: Scope) -> Element {
-    let sidebar = use_sidebar(cx);
-    let router = use_router(cx);
-    let local_profile = use_local_profile(cx);
+pub fn Sidebar() -> Element {
+    let sidebar = use_sidebar();
+    let router = use_router();
+    let local_profile = use_local_profile();
 
     let sidebar_width = if sidebar.read().is_open() {
         "w-[var(--sidebar-width)]"
@@ -53,9 +53,13 @@ pub fn Sidebar(cx: Scope) -> Element {
     };
 
     let read_local_profile = local_profile.read();
-    let profile_img_src = read_local_profile.image.as_ref().map(|url| url.as_str()).unwrap_or_else(|| "");
+    let profile_img_src = read_local_profile
+        .image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
 
-    cx.render(rsx! {
+    rsx! {
         Overlay,
         div {
             class: "{sidebar_width} z-[100] fixed top-0 left-0 h-full overflow-x-hidden flex flex-col navbar-bg-color transition-[width] duration-300",
@@ -103,5 +107,5 @@ pub fn Sidebar(cx: Scope) -> Element {
                 "Logout"
             },
         }
-    })
+    }
 }
