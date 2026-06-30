@@ -14,8 +14,8 @@ pub fn HomeBookmarked() -> Element {
     let navigator = use_navigator();
 
     use_future(move || {
-        let toaster = toaster.clone();
-        let post_manager = post_manager.clone();
+        let mut toaster = toaster.clone();
+        let mut post_manager = post_manager.clone();
         async move {
             toaster
                 .write()
@@ -67,13 +67,15 @@ pub fn HomeBookmarked() -> Element {
         Appbar {
             title: "Saved",
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::HomeLiked {}),
+                click_handler: move || {
+                    navigator.replace(page::Route::HomeLiked {});
+                },
                 img: "/static/icons/icon-like.svg",
                 label: "Liked",
                 title: "Show Like Posts",
             },
             AppbarImgButton {
-                click_handler: move |_| (),
+                click_handler: move || (),
                 img: "/static/icons/icon-bookmark.svg",
                 label: "Saved",
                 title: "Show Bookmarked Posts",
@@ -81,7 +83,9 @@ pub fn HomeBookmarked() -> Element {
                 append_class: app_bar::BUTTON_SELECTED.to_string(),
             },
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::Home {}),
+                click_handler: move || {
+                    navigator.replace(page::Route::Home {});
+                },
                 img: "/static/icons/icon-home.svg",
                 label: "Home",
                 title: "Go to the gome page",

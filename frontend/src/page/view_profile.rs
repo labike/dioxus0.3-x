@@ -18,9 +18,9 @@ pub fn ViewProfile(user: UserId) -> Element {
     let local_profile = use_local_profile();
 
     use_future(move || {
-        let post_manager = post_manager.clone();
-        let profile = profile.clone();
-        let toaster = toaster.clone();
+        let mut post_manager = post_manager.clone();
+        let mut profile = profile.clone();
+        let mut toaster = toaster.clone();
         async move {
             post_manager.write().clear();
             use uchat_endpoint::user::endpoint::{ViewProfile, ViewProfileOk};
@@ -128,7 +128,7 @@ pub fn ViewProfile(user: UserId) -> Element {
         Appbar {
             title: "View Profile",
             AppbarImgButton {
-                click_handler: move |_| navigator.go_back(),
+                click_handler: move || navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

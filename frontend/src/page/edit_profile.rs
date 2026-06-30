@@ -37,7 +37,7 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
                 id: "image-input",
                 r#type: "file",
                 accept: "image/*",
-                oninput: |_| {
+                oninput: move |_| {
                     to_owned![page_state, toaster];
                     async move {
                         use gloo_file::{File, futures::read_as_data_url};
@@ -88,8 +88,8 @@ pub fn EmailInput(page_state: Signal<PageState>) -> Element {
                 placeholder: "Email Address",
                 value: "{page_state.read().email}",
                 oninput: move |ev| {
-                    if !&ev.value.is_empty() {
-                        match Email::try_new(&ev.value) {
+                    if !&ev.value().is_empty() {
+                        match Email::try_new(&ev.value()) {
                             Ok(_) => {
                                 page_state.with_mut(|state| state.form_errors.remove("bad-email"));
                             }
@@ -103,7 +103,7 @@ pub fn EmailInput(page_state: Signal<PageState>) -> Element {
                     } else {
                         page_state.with_mut(|state| state.form_errors.remove("bad-email"));
                     };
-                    page_state.with_mut(|state| state.email = ev.value.clone());
+                    page_state.with_mut(|state| state.email = ev.value().clone());
                 },
             }
         }
@@ -138,7 +138,7 @@ pub fn DisplayNameInput(page_state: Signal<PageState>) -> Element {
                 placeholder: "Display Name",
                 value: "{page_state.read().display_name}",
                 oninput: move |ev| {
-                    match DisplayName::try_new(&ev.value) {
+                    match DisplayName::try_new(&ev.value()) {
                         Ok(_) => {
                             page_state
                                 .with_mut(|state| state.form_errors.remove("bad-display-name"));
@@ -147,10 +147,10 @@ pub fn DisplayNameInput(page_state: Signal<PageState>) -> Element {
                             page_state
                                 .with_mut(|state| {
                                     state.form_errors.set("bad-display-name", e.formatted_error())
-                                })
+                            })
                         }
                     }
-                    page_state.with_mut(|state| state.display_name = ev.value.clone());
+                    page_state.with_mut(|state| state.display_name = ev.value().clone());
                 },
             }
         }
@@ -176,7 +176,7 @@ pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
     };
 
     rsx! {
-        div { class: "flex flex-row justify-center", img_data }
+        div { class: "flex flex-row justify-center", {img_data} }
     }
 }
 
@@ -184,7 +184,7 @@ pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
 pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::user::Password;
 
-    let check_password_mismatch = move || {
+    let mut check_password_mismatch = move || {
         let password_matches =
             page_state.with(|state| state.password == state.password_confirmation);
 
@@ -211,7 +211,7 @@ pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
                         placeholder: "password",
                         value: "{page_state.read().password}",
                         oninput: move |ev| {
-                            match Password::try_new(&ev.value) {
+                            match Password::try_new(&ev.value()) {
                                 Ok(_) => {
                                     page_state.with_mut(|state| state.form_errors.remove("bad-password"))
                                 }
@@ -219,10 +219,10 @@ pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
                                     page_state
                                         .with_mut(|state| {
                                             state.form_errors.set("bad-password", e.formatted_error())
-                                        })
+                                    })
                                 }
                             };
-                            page_state.with_mut(|state| state.password = ev.value.clone());
+                            page_state.with_mut(|state| state.password = ev.value().clone());
                             page_state.with_mut(|state| state.password_confirmation = "".to_string());
                             if page_state.with(|state| state.password.is_empty()) {
                                 page_state.with_mut(|state| state.form_errors.remove("bad-password"));
@@ -241,7 +241,7 @@ pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
                         placeholder: "password confirm",
                         value: "{page_state.read().password_confirmation}",
                         oninput: move |ev| {
-                            page_state.with_mut(|state| state.password_confirmation = ev.value.clone());
+                            page_state.with_mut(|state| state.password_confirmation = ev.value().clone());
                             check_password_mismatch();
                         },
                     }
@@ -263,8 +263,8 @@ pub fn EditProfile() -> Element {
     let submit_btn_style = maybe_class!("btn-disabled", disabled_submit);
 
     use_future(move || {
-        let toaster = toaster.clone();
-        let page_state = page_state.clone();
+        let mut toaster = toaster.clone();
+        let mut page_state = page_state.clone();
         async move {
             toaster
                 .write()
@@ -340,7 +340,7 @@ pub fn EditProfile() -> Element {
                         .write()
                         .success("profile updated", chrono::Duration::seconds(3));
                     local_profile.write().image = res.profile_image;
-                    navigator.push(crate::page::Route::Home {})
+                    navigator.push(crate::page::Route::Home {});
                 }
                 Err(e) => {
                     toaster.write().error(
@@ -355,7 +355,7 @@ pub fn EditProfile() -> Element {
     rsx! {
         Appbar { title: "Edit Profile",
             AppbarImgButton {
-                click_handler: move |_| navigator.go_back(),
+                click_handler: move || navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

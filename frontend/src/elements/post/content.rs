@@ -106,26 +106,30 @@ pub fn Poll(post_id: PostId, content: EndpointPoll) -> Element {
     };
 
     let choices = content.choices.iter().map(|choice| {
+        let choice_id = choice.id;
+        let choice_description = choice.description.clone();
+        let choice_votes = choice.num_votes;
+
         let percent = if total_votes > 0 {
-            let percent = (choice.num_votes as f64 / total_votes as f64) * 100.0;
+            let percent = (choice_votes as f64 / total_votes as f64) * 100.0;
             format!("{percent:.0}%")
         } else {
             "0%".to_string()
         };
 
-        let background_color = if leader_ids.contains(&choice.id) {
+        let background_color = if leader_ids.contains(&choice_id) {
             "bg-blue-300"
         } else {
             "bg-neutral-300"
         };
 
-        let foreground_styles = maybe_class!("font-bold", leader_ids.contains(&choice.id));
+        let foreground_styles = maybe_class!("font-bold", leader_ids.contains(&choice_id));
 
         rsx! {
             li {
-                key: "{choice.id.to_string()}",
+                key: "{choice_id.to_string()}",
                 class: "relative p-2 m-3 cursor-pointer grid grid-cols-3rem_1fr] border rounded border-slate-400",
-                onclick: move |_| vote_onclick(post_id, choice.id),
+                onclick: move |_| vote_onclick(post_id, choice_id),
                 div {
                     class: "absolute left-0 {background_color} h-full rounded z-[-1]",
                     style: "width: {percent}",
@@ -136,7 +140,7 @@ pub fn Poll(post_id: PostId, content: EndpointPoll) -> Element {
                 },
                 div {
                     class: "{foreground_styles}",
-                    "{choice.description.as_ref()}",
+                    "{choice_description.as_ref()}",
                 }
             }
         }

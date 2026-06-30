@@ -15,8 +15,8 @@ pub fn Trending() -> Element {
     let post_manager = use_post_manager();
 
     use_future(move || {
-        let toaster = toaster.clone();
-        let post_manager = post_manager.clone();
+        let mut toaster = toaster.clone();
+        let mut post_manager = post_manager.clone();
         async move {
             toaster
                 .write()
@@ -54,12 +54,12 @@ pub fn Trending() -> Element {
         Appbar {
             title: "Trending Posts",
             AppbarImgButton {
-                click_handler: move |_| navigator.go_back(),
+                click_handler: move || navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
             },
         },
-        {trending_posts_list}
+        for post in trending_posts_list { {post} }
     }
 }

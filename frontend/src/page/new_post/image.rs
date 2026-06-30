@@ -76,7 +76,7 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
                 id: "image-input",
                 r#type: "file",
                 accept: "image/*",
-                oninput: |_| {
+                oninput: move |_| {
                     to_owned![page_state, toaster];
                     async move {
                         use gloo_file::{File, futures::read_as_data_url};
@@ -122,7 +122,7 @@ pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
     };
 
     rsx! {
-        div { class: "flex flex-row justify-center", Preview {} }
+        div { class: "flex flex-row justify-center", {Preview} }
     }
 }
 
@@ -178,27 +178,27 @@ pub fn NewImage() -> Element {
     rsx! {
         Appbar { title: "Image",
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::NewChat {}),
+                click_handler: move || { navigator.replace(page::Route::NewChat {}); },
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
             }
             AppbarImgButton {
-                click_handler: move |_| (),
+                click_handler: move || {},
                 img: "/static/icons/icon-image.svg",
                 label: "Image",
                 disabled: true,
                 title: "Post a new image",
-                append_class: app_bar::BUTTON_SELECTED,
+                append_class: app_bar::BUTTON_SELECTED.to_string(),
             }
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::NewPoll {}),
+                click_handler: move || { navigator.replace(page::Route::NewPoll {}); },
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
             }
             AppbarImgButton {
-                click_handler: move |_| navigator.go_back(),
+                click_handler: move || { navigator.go_back(); },
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

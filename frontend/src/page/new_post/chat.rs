@@ -146,27 +146,27 @@ pub fn NewChat() -> Element {
     rsx! {
         Appbar { title: "Chat",
             AppbarImgButton {
-                click_handler: move |_| (),
+                click_handler: move || {},
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
                 disabled: true,
-                append_class: app_bar::BUTTON_SELECTED,
+                append_class: app_bar::BUTTON_SELECTED.to_string(),
             }
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::NewImage {}),
+                click_handler: move || { navigator.replace(page::Route::NewImage {}); },
                 img: "/static/icons/icon-image.svg",
                 label: "Image",
                 title: "Post a new image",
             }
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::NewPoll {}),
+                click_handler: move || { navigator.replace(page::Route::NewPoll {}); },
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
             }
             AppbarImgButton {
-                click_handler: move |_| navigator.go_back(),
+                click_handler: move || { navigator.go_back(); },
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

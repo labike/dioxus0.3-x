@@ -11,15 +11,15 @@ pub fn AppbarImgButton(
     label: String,
     title: String,
     #[props(default)] append_class: String,
-    click_handler: EventHandler<MouseEvent>,
+    click_handler: EventHandler<()>,
     #[props(default)] disabled: bool,
 ) -> Element {
     rsx! {
         button {
             class: "flex flex-col w-10 h-14 justify-end items-center {append_class}",
             disabled: disabled,
-            onclick: move |ev| {
-                click_handler.call(ev);
+            onclick: move |_| {
+                click_handler.call(());
             },
             title: title,
             img {

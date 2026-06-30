@@ -1,6 +1,6 @@
 use crate::page::view_profile::ViewProfile;
 use dioxus::dioxus_core;
-use dioxus::prelude::{dioxus_signals, rsx, GlobalSignal, VNode};
+use dioxus::prelude::{dioxus_signals, rsx, VNode};
 pub mod register;
 pub mod login;
 pub mod home;

@@ -15,7 +15,7 @@ fn can_submit(message: &str) -> bool {
 pub fn MessageInput(message: String, on_input: EventHandler<FormEvent>) -> Element {
     let max_chars = Message::MAX_CHARS;
 
-    let wrong_len = maybe_class!("err-text-color", !can_submit(message));
+    let wrong_len = maybe_class!("err-text-color", !can_submit(&message));
 
     rsx! {
         div { class: "flex flex-row relative",
@@ -38,7 +38,7 @@ pub fn QuickRespond(opened: Signal<bool>) -> Element {
     let api_client = ApiClient::global();
     let toaster = use_toaster();
 
-    let message = use_signal(String::new);
+    let mut message = use_signal(String::new);
 
     let form_onsubmit = async_handler!(
         [api_client, toaster, message, opened],
@@ -46,7 +46,7 @@ pub fn QuickRespond(opened: Signal<bool>) -> Element {
             let request_data = NewPost {
                 content: Chat {
                     heading: None,
-                    message: Message::try_new(message.get()).unwrap(),
+                    message: Message::try_new(message.read().as_str()).unwrap(),
                 }
                 .into(),
                 options: NewPostOptions::default(),
@@ -82,7 +82,7 @@ pub fn QuickRespond(opened: Signal<bool>) -> Element {
             div { class: "w-full flex flex-col justify-end",
                 MessageInput {
                     message: message.read().clone(),
-                    on_input: move |ev: FormEvent| { message.set(ev.value.clone()) },
+                    on_input: move |ev: FormEvent| { message.set(ev.value().clone()) },
                 }
                 button {
                     class: "mt-2 btn {submit_cursor} {submit_btn_style} w-[80px] h-[30px] flex justify-center items-center self-end",

@@ -18,8 +18,8 @@ pub fn Home() -> Element {
     let navigator = use_navigator();
 
     use_future(move || {
-        let toaster = toaster.clone();
-        let post_manager = post_manager.clone();
+        let mut toaster = toaster.clone();
+        let mut post_manager = post_manager.clone();
         async move {
             toaster
                 .write()
@@ -62,9 +62,7 @@ pub fn Home() -> Element {
                 }
             }
         } else {
-            rsx! {
-                {posts}
-            }
+            rsx! { for post in posts { {post} } }
         }
     };
 
@@ -72,19 +70,19 @@ pub fn Home() -> Element {
         Appbar {
             title: "Home",
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::HomeLiked {}),
+                click_handler: move || { navigator.replace(page::Route::HomeLiked {}); },
                 img: "/static/icons/icon-like.svg",
                 label: "Liked",
                 title: "Show Like Posts",
             },
             AppbarImgButton {
-                click_handler: move |_| navigator.replace(page::Route::HomeBookmarked {}),
+                click_handler: move || { navigator.replace(page::Route::HomeBookmarked {}); },
                 img: "/static/icons/icon-bookmark.svg",
                 label: "Saved",
                 title: "Show Bookmarked Posts",
             },
             AppbarImgButton {
-                click_handler: move |_| (),
+                click_handler: move || {},
                 img: "/static/icons/icon-home.svg",
                 label: "Home",
                 title: "Go to the gome page",
