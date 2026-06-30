@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use fermi::{use_atom_ref, UseAtomRef};
 use uchat_domain::ids::UserId;
 
 #[derive(Default)]
@@ -10,6 +9,6 @@ pub struct LocalProfile {
     pub user_id: Option<UserId>,
 }
 
-pub fn use_local_profile() -> &UseAtomRef<LocalProfile> {
-  use_atom_ref(crate::app::LOCAL_PROFILE)
+pub fn use_local_profile() -> Signal<LocalProfile> {
+    use_context::<Signal<LocalProfile>>()
 }

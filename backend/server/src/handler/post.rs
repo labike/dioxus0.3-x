@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
-use axum::{async_trait, Json};
+use async_trait::async_trait;
+use axum::Json;
 use chrono::Utc;
 use uchat_domain::ids::ImageId;
 use uchat_domain::Username;

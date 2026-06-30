@@ -1,49 +1,44 @@
 use diesel::{ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use std::{error::Error, time::Duration};
+use std::{error::Error, sync::Arc};
 
 use crate::error::QueryError;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../migrations");
 
-type AsyncConnectionManager = bb8_diesel::DieselConnectionManager<PgConnection>;
+pub type AsyncConnection = PgConnection;
+pub type OwnedAsyncConnection = PgConnection;
 
-pub type AsyncConnection<'a> = bb8::PooledConnection<'a, AsyncConnectionManager>;
-pub type OwnedAsyncConnection = bb8::PooledConnection<'static, AsyncConnectionManager>;
+#[derive(Clone, Debug, Default)]
+pub struct PoolState {
+    pub max_size: usize,
+}
 
 #[derive(Clone, Debug)]
-pub struct AsyncConnectionPool(bb8::Pool<AsyncConnectionManager>);
+pub struct AsyncConnectionPool {
+    connection_url: Arc<str>,
+}
 
 impl AsyncConnectionPool {
     pub async fn new<S: AsRef<str>>(url: S) -> Result<Self, QueryError> {
         let pool = new_async_pool(url).await?;
         {
             // check connection
-            let _ = pool
-                .0
-                .get()
-                .await
-                .map_err(|e| QueryError::Connection(e.to_string()))?;
+            let _ = pool.get_owned().await?;
         }
         Ok(pool)
     }
 
-    pub async fn get(&self) -> Result<AsyncConnection<'_>, QueryError> {
-        self.0
-            .get()
-            .await
-            .map_err(|e| QueryError::Connection(e.to_string()))
+    pub async fn get(&self) -> Result<AsyncConnection, QueryError> {
+        self.get_owned().await
     }
 
     pub async fn get_owned(&self) -> Result<OwnedAsyncConnection, QueryError> {
-        self.0
-            .get_owned()
-            .await
-            .map_err(|e| QueryError::Connection(e.to_string()))
+        connect(self.connection_url.as_ref()).map_err(|e| QueryError::Connection(e.to_string()))
     }
 
-    pub fn state(&self) -> bb8::State {
-        self.0.state()
+    pub fn state(&self) -> PoolState {
+        PoolState { max_size: 1 }
     }
 }
 
@@ -68,13 +63,7 @@ pub fn connect<S: AsRef<str>>(url: S) -> Result<PgConnection, ConnectionError> {
 /// let conn = &mut async_pool.get().await?;
 /// ```
 pub async fn new_async_pool<S: AsRef<str>>(url: S) -> Result<AsyncConnectionPool, QueryError> {
-    let url = url.as_ref();
-    let manager = bb8_diesel::DieselConnectionManager::<PgConnection>::new(url);
-    bb8::Pool::builder()
-        .test_on_check_out(true)
-        .connection_timeout(Duration::from_secs(10))
-        .build(manager)
-        .await
-        .map(AsyncConnectionPool)
-        .map_err(|e| QueryError::Pool(e.to_string()))
+    Ok(AsyncConnectionPool {
+        connection_url: Arc::<str>::from(url.as_ref()),
+    })
 }

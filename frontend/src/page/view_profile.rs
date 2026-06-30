@@ -4,35 +4,32 @@ use crate::fetch_json;
 use crate::prelude::*;
 use crate::util::ApiClient;
 use dioxus::prelude::*;
-use std::str::FromStr;
 use uchat_domain::ids::UserId;
 use uchat_endpoint::user::endpoint::{FollowUser, FollowUserOk};
 use uchat_endpoint::user::types::FollowAction;
 
 #[component]
-pub fn ViewProfile() -> Element {
+pub fn ViewProfile(user: UserId) -> Element {
     let api_client = ApiClient::global();
     let toaster = use_toaster();
-    let router = use_router();
+    let navigator = use_navigator();
     let post_manager = use_post_manager();
-    let profile = use_ref(|| None);
-    let user_id = dioxus_router::use_route()
-        .last_segment()
-        .and_then(|id| UserId::from_str(id).ok())
-        .unwrap_or_default();
+    let profile = use_signal(|| None);
     let local_profile = use_local_profile();
 
-    use_effect(cx, (&user_id,), |(user_id,)| {
-        to_owned![api_client, post_manager, profile, toaster];
+    use_future(move || {
+        let post_manager = post_manager.clone();
+        let profile = profile.clone();
+        let toaster = toaster.clone();
         async move {
             post_manager.write().clear();
             use uchat_endpoint::user::endpoint::{ViewProfile, ViewProfileOk};
-            let request_data = ViewProfile { for_user: user_id };
+            let request_data = ViewProfile { for_user: user };
             post_manager.write().clear();
             let response = fetch_json!(<ViewProfileOk>, api_client, request_data);
             match response {
                 Ok(res) => {
-                    profile.with_mut(|profile| *profile = Some(res.profile));
+                    profile.set(Some(res.profile));
                     post_manager.write().populate(res.posts.into_iter());
                 }
                 Err(e) => toaster.write().error(
@@ -54,7 +51,7 @@ pub fn ViewProfile() -> Element {
                 true => FollowAction::UnFollow,
                 false => FollowAction::Follow,
             },
-            user_id,
+            user_id: user,
         };
 
         match fetch_json!(<FollowUserOk>, api_client, request_data) {
@@ -70,8 +67,8 @@ pub fn ViewProfile() -> Element {
         }
     });
 
-    let ProfileSection = {
-        match profile.with(|profile| profile.clone()) {
+    let profile_section = {
+        match profile() {
             Some(profile) => {
                 let display_name = profile
                     .display_name
@@ -85,18 +82,18 @@ pub fn ViewProfile() -> Element {
                     true => "Unfollow",
                     false => "Follow",
                 };
-                let FollowButton = local_profile.read().user_id.map(|id| {
+                let follow_button = local_profile.read().user_id.and_then(|id| {
                     if id == profile.id {
                         None
                     } else {
-                        rsx! {
+                        Some(rsx! {
                             button {
                                 class: "btn",
                                 onclick: follow_onclick,
                                 "{follow_button_text}"
                             }
-                        }
-                    };
+                        })
+                    }
                 });
 
                 rsx! {
@@ -115,7 +112,7 @@ pub fn ViewProfile() -> Element {
                         div {
                             "Name: {display_name}"
                         },
-                        FollowButton
+                        {follow_button}
                     }
                 }
             }
@@ -125,19 +122,19 @@ pub fn ViewProfile() -> Element {
         }
     };
 
-    let Posts = post_manager.read().all_to_public();
+    let posts = post_manager.read().all_to_public();
 
-    cx.render(rsx! {
+    rsx! {
         Appbar {
             title: "View Profile",
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
             },
         },
-        ProfileSection,
+        {profile_section},
         div {
             class: "font-bold text-center my-6",
             "Posts"
@@ -145,6 +142,6 @@ pub fn ViewProfile() -> Element {
         hr {
             class: "h-px my-6 bg-gray-200 border-0"
         },
-        Posts.into_iter()
-    })
+        for post in posts { {post} }
+    }
 }

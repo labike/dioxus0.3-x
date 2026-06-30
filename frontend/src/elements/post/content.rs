@@ -13,9 +13,9 @@ use uchat_endpoint::post::types::{
     VoteCast,
 };
 
-#[inline_props]
-pub fn Chat(content: &EndpointChat) -> Element {
-    let Heading = content.heading.as_ref().map(|heading| {
+#[component]
+pub fn Chat(content: EndpointChat) -> Element {
+    let heading = content.heading.as_ref().map(|heading| {
         rsx! {
             div {
                 class: "font-bold",
@@ -26,7 +26,7 @@ pub fn Chat(content: &EndpointChat) -> Element {
 
     rsx! {
         div {
-            Heading,
+            {heading}
             p {
                 "{content.message.as_ref()}"
             }
@@ -34,17 +34,15 @@ pub fn Chat(content: &EndpointChat) -> Element {
     }
 }
 
-#[inline_props]
-pub fn Image(content: &EndpointImage) -> Element {
+#[component]
+pub fn Image(content: EndpointImage) -> Element {
     let url = if let ImageKind::Url(url) = &content.kind {
         url
     } else {
-        return cx.render(rsx! {
-            "image not found"
-        });
+        return rsx! { "image not found" };
     };
 
-    let Caption = content.caption.as_ref().map(|caption| {
+    let caption = content.caption.as_ref().map(|caption| {
         rsx! {
             figcaption {
                 em {
@@ -57,7 +55,7 @@ pub fn Image(content: &EndpointImage) -> Element {
     rsx! {
         figure {
             class: "flex flex-col gap2",
-            Caption,
+            {caption}
             img {
                 class: "w-full object-contain max-h-[80vh]",
                 src: "{url}"
@@ -66,8 +64,8 @@ pub fn Image(content: &EndpointImage) -> Element {
     }
 }
 
-#[inline_props]
-pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
+#[component]
+pub fn Poll(post_id: PostId, content: EndpointPoll) -> Element {
     let toaster = use_toaster();
     let api_client = ApiClient::global();
 
@@ -107,7 +105,7 @@ pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
         ids
     };
 
-    let Choices = content.choices.iter().map(|choice| {
+    let choices = content.choices.iter().map(|choice| {
         let percent = if total_votes > 0 {
             let percent = (choice.num_votes as f64 / total_votes as f64) * 100.0;
             format!("{percent:.0}%")
@@ -127,7 +125,7 @@ pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
             li {
                 key: "{choice.id.to_string()}",
                 class: "relative p-2 m-3 cursor-pointer grid grid-cols-3rem_1fr] border rounded border-slate-400",
-                onclick: move |_| vote_onclick(*post_id, choice.id),
+                onclick: move |_| vote_onclick(post_id, choice.id),
                 div {
                     class: "absolute left-0 {background_color} h-full rounded z-[-1]",
                     style: "width: {percent}",
@@ -142,9 +140,9 @@ pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
                 }
             }
         }
-    });
+    }).collect::<Vec<_>>();
 
-    let Heading = rsx! {
+    let heading = rsx! {
         figcaption {
             "{content.heading.as_ref()}"
         }
@@ -152,34 +150,34 @@ pub fn Poll(post_id: PostId, content: &EndpointPoll) -> Element {
 
     rsx! {
         div {
-            Heading,
+            {heading}
             ul {
-                Choices.into_iter()
+                for choice in choices { {choice} }
             }
         }
     }
 }
 
-#[inline_props]
-pub fn Content(cx: Scope, post: &PublicPost) -> Element {
+#[component]
+pub fn Content(post: PublicPost) -> Element {
     use uchat_endpoint::post::types::Content as EndpointContent;
     rsx! {
         div {
             match &post.content {
                 EndpointContent::Chat(content) => rsx! {
                     Chat {
-                        content: content,
+                        content: content.clone(),
                     }
                 },
                 EndpointContent::Image(content) => rsx! {
                     Image {
-                        content: content,
+                        content: content.clone(),
                     }
                 },
                 EndpointContent::Poll(content) => rsx! {
                     Poll {
                         post_id: post.id,
-                        content: content,
+                        content: content.clone(),
                     }
                 },
             }

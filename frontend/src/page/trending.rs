@@ -10,13 +10,14 @@ use uchat_endpoint::trending::endpoint::{TrendingPostOk, TrendingPosts};
 #[component]
 pub fn Trending() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router();
+    let navigator = use_navigator();
     let toaster = use_toaster();
     let post_manager = use_post_manager();
 
-    let _fetch_trending_posts = {
-        to_owned![api_client, toaster, post_manager];
-        use_future(cx, (), |_| async move {
+    use_future(move || {
+        let toaster = toaster.clone();
+        let post_manager = post_manager.clone();
+        async move {
             toaster
                 .write()
                 .info("Retrieving trending posts", chrono::Duration::seconds(3));
@@ -31,10 +32,10 @@ pub fn Trending() -> Element {
                     chrono::Duration::seconds(3),
                 ),
             }
-        })
-    };
+        }
+    });
 
-    let TrendingPostsList = post_manager
+    let trending_posts_list = post_manager
         .read()
         .posts
         .iter()
@@ -47,18 +48,18 @@ pub fn Trending() -> Element {
                 }
             }
         })
-        .collect::<Vec<LazyNodes>>();
+        .collect::<Vec<Element>>();
 
     rsx! {
         Appbar {
             title: "Trending Posts",
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
             },
         },
-        TrendingPostsList.into_iter()
+        {trending_posts_list}
     }
 }

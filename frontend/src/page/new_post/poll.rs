@@ -5,7 +5,6 @@ use crate::util::ApiClient;
 use crate::{async_handler, fetch_json, maybe_class, page};
 use chrono::Duration;
 use dioxus::prelude::*;
-use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use uchat_domain::ids::PollChoiceId;
@@ -68,8 +67,8 @@ impl PageState {
     }
 }
 
-#[inline_props]
-pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn HeadingInput(page_state: Signal<PageState>) -> Element {
     let max_chars = PollHeading::MAX_CHARS;
 
     let wrong_len = maybe_class!(
@@ -97,15 +96,15 @@ pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
                 id: "heading",
                 value: "{page_state.read().heading}",
                 oninput: move |ev| {
-                    page_state.with_mut(|state| state.heading = ev.data.value.clone())
+                    page_state.with_mut(|state| state.heading = ev.value().clone())
                 }
             }
         }
     }
 }
 
-#[inline_props]
-pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn PollChoices(page_state: Signal<PageState>) -> Element {
     let choices = page_state.read().poll_choices.iter().map(|(&key, choice)| {
         let choice = choice.clone();
         let max_chars = PollChoiceDescription::MAX_CHARS;
@@ -123,7 +122,7 @@ pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
                         class: "inout-field flex-1 border-1",
                         placeholder: "",
                         oninput: move |ev| {
-                            page_state.with_mut(|state| state.replace_choice(key, &ev.data.value));
+                            page_state.with_mut(|state| state.replace_choice(key, ev.value()));
                         },
                         value: "{choice}"
                     }
@@ -142,7 +141,7 @@ pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
                 }
             }
         }
-    }).collect::<Vec<LazyNodes>>();
+    }).collect::<Vec<Element>>();
 
     rsx! {
         div {
@@ -150,7 +149,7 @@ pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
             "Poll Choices",
             ol {
                 class: "list-decimal ml-4 flex flex-col gap-2",
-                choices.into_iter()
+                {choices}
             },
             div {
                 class: "flex flex-row justify-end",
@@ -166,17 +165,18 @@ pub fn PollChoices(page_state: UseRef<PageState>) -> Element {
         }
     }
 }
+#[component]
 pub fn NewPoll() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router();
+    let navigator = use_navigator();
     let toaster = use_toaster();
 
-    let page_state = use_ref(PageState::default);
+    let page_state = use_signal(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        [api_client, page_state, toaster, router],
+        [api_client, page_state, toaster, navigator],
         move |_| async move {
             let request_data = NewPost {
                 content: Poll {
@@ -234,7 +234,7 @@ pub fn NewPoll() -> Element {
                         .write()
                         .success("Poll Success!", Duration::seconds(3));
                     // 禁止返回post
-                    router.replace_route(page::HOME, None, None);
+                    navigator.replace(page::Route::Home {});
                 }
                 Err(e) => {
                     toaster
@@ -249,13 +249,13 @@ pub fn NewPoll() -> Element {
         Appbar {
             title: "Poll",
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewChat {}),
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
             },
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_IMAGE, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewImage {}),
                 img: "/static/icons/icon-image.svg",
                 label: "Image",
                 title: "Post a new image",
@@ -266,10 +266,10 @@ pub fn NewPoll() -> Element {
                 label: "Poll",
                 disabled: true,
                 title: "Post a new poll",
-                append_class: app_bar::BUTTON_SELECTED,
+                append_class: app_bar::BUTTON_SELECTED.to_string(),
             },
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

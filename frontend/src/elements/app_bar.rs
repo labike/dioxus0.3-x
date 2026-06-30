@@ -5,42 +5,30 @@ use dioxus::prelude::*;
 
 pub const BUTTON_SELECTED: &str = "border-b-4 border-slate-600";
 
-#[derive(Props, Clone, PartialEq)]
-pub struct AppbarImgButtonProps<'a, F>
-where
-    F: Fn(MouseEvent),
-{
-    pub append_class: Option<String>,
-    pub click_handler: Option<F>,
-    pub disabled: Option<bool>,
+#[component]
+pub fn AppbarImgButton(
     img: String,
     label: String,
-    title: Option<String>,
-}
-
-#[component]
-pub fn AppbarImgButton<F>(props: AppbarImgButtonProps<F>) -> Element
-where
-    F: Fn(MouseEvent),
-{
-    let append_class = props.append_class.unwrap_or("");
+    title: String,
+    #[props(default)] append_class: String,
+    click_handler: EventHandler<MouseEvent>,
+    #[props(default)] disabled: bool,
+) -> Element {
     rsx! {
         button {
             class: "flex flex-col w-10 h-14 justify-end items-center {append_class}",
-            disabled: props.disabled.unwrap_or_default(),
-            onclick: |ev| {
-                if let Some(callback) = props.click_handler {
-                    callback(ev);
-                }
+            disabled: disabled,
+            onclick: move |ev| {
+                click_handler.call(ev);
             },
-            title: props.title.unwrap_or(""),
+            title: title,
             img {
                 class: "w-6 h-6",
-                src: "{props.img}"
+                src: "{img}"
             },
             span {
                 class: "text-sm",
-                "{props.label}"
+                "{label}"
             }
         }
     }
@@ -61,7 +49,7 @@ pub fn Appbar(props: AppbarProps) -> Element {
         .as_ref()
         .map(|url| url.as_str())
         .unwrap_or_else(|| "");
-    let sidebar = use_sidebar();
+    let mut sidebar = use_sidebar();
 
     rsx! {
         div {
@@ -80,7 +68,7 @@ pub fn Appbar(props: AppbarProps) -> Element {
                     class: "text-xl font-bold mr-auto",
                     "{props.title}"
                 }
-                props.children
+                {props.children}
             }
         }
     }

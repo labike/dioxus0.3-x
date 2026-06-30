@@ -6,20 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bb8 = "0.9.1"
-bb8-diesel = { git = "https://github.com/overdrivenpotato/bb8-diesel.git" }
 chrono = { version = "0.4.45", features = ["serde"] }
 diesel-derive-newtype = "2.1.2"
 diesel_migrations = { version = "2.3.2", features = ["postgres"] }
-password-hash = { version = "0.6.1" }
-r2d2 = "0.8.10"
+password-hash = { version = "0.5.0", features = ["alloc"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["full"] }
 tracing = { version = "0.1.44", features = ["attributes"] }
 url = { version = "2.5.8" }
-uuid = { version = "1.23.3", features = ["v4", "serde"] }
+uuid = { version = "1.23.4", features = ["v4", "serde"] }
 
 uchat_domain = { path = "../../shared/domain", features = ["query"] }
 uchat_endpoint = { path = "../../shared/endpoint" }

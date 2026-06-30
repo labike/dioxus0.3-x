@@ -5,7 +5,6 @@ use crate::util::ApiClient;
 use crate::{async_handler, fetch_json, maybe_class, page, util};
 use chrono::Duration;
 use dioxus::prelude::*;
-use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use uchat_domain::post::Caption;
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
@@ -34,8 +33,8 @@ impl PageState {
     }
 }
 
-#[inline_props]
-pub fn CaptionInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn CaptionInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::post::Caption;
 
     let max_chars = Caption::MAX_CHARS;
@@ -59,14 +58,14 @@ pub fn CaptionInput(page_state: UseRef<PageState>) -> Element {
                 class: "input-field",
                 id: "caption",
                 value: "{page_state.read().caption}",
-                oninput: move |ev| { page_state.with_mut(|state| state.caption = ev.data.value.clone()) },
+                oninput: move |ev| page_state.with_mut(|state| state.caption = ev.value().clone()),
             }
         }
     }
 }
 
-#[inline_props]
-pub fn ImageInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn ImageInput(page_state: Signal<PageState>) -> Element {
     let toaster = use_toaster();
 
     rsx! {
@@ -106,8 +105,8 @@ pub fn ImageInput(page_state: UseRef<PageState>) -> Element {
     }
 }
 
-#[inline_props]
-pub fn ImagePreview(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
     let image_data = page_state.read().clone().image;
     let Preview = if let Some(ref image) = image_data {
         rsx! {
@@ -127,17 +126,18 @@ pub fn ImagePreview(page_state: UseRef<PageState>) -> Element {
     }
 }
 
+#[component]
 pub fn NewImage() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router();
+    let navigator = use_navigator();
     let toaster = use_toaster();
 
-    let page_state = use_ref(PageState::default);
+    let page_state = use_signal(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        [api_client, page_state, toaster, router],
+        [api_client, page_state, toaster, navigator],
         move |_| async move {
             let request_data = NewPost {
                 content: Image {
@@ -164,7 +164,7 @@ pub fn NewImage() -> Element {
                 Ok(_) => {
                     toaster.write().success("Posted!", Duration::seconds(3));
                     // 禁止返回post
-                    router.replace_route(page::HOME, None, None);
+                    navigator.replace(page::Route::Home {});
                 }
                 Err(e) => {
                     toaster
@@ -178,7 +178,7 @@ pub fn NewImage() -> Element {
     rsx! {
         Appbar { title: "Image",
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewChat {}),
                 img: "/static/icons/icon-messages.svg",
                 label: "Chat",
                 title: "Post a new chat",
@@ -192,13 +192,13 @@ pub fn NewImage() -> Element {
                 append_class: app_bar::BUTTON_SELECTED,
             }
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_POLL, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewPoll {}),
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
             }
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

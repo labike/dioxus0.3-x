@@ -1,6 +1,7 @@
 use std::path::PathBuf;
-use axum::{async_trait, Json};
-use axum::body::{Bytes, Full};
+use async_trait::async_trait;
+use axum::body::Body;
+use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
@@ -73,7 +74,7 @@ pub async fn save_image<T: AsRef<[u8]>>(id: ImageId, data: T) -> Result<(), ApiE
     Ok(())
 }
 
-pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Full<Bytes>>, ApiError> {
+pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Body>, ApiError> {
     use tokio::fs;
 
     let mut path = PathBuf::from(USER_CONTENT_DIR);
@@ -87,7 +88,11 @@ pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Full<Bytes>
         use base64::{engine::general_purpose, Engine as _};
         let image_data = general_purpose::STANDARD.decode(image_data).unwrap();
         Ok(
-            Response::builder().status(StatusCode::OK).header(header::CONTENT_TYPE, mime).body(Full::from(image_data)).unwrap(),
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, mime)
+                .body(Body::from(image_data))
+                .unwrap(),
         )
     }
 }

@@ -3,10 +3,9 @@
 use crate::page;
 use crate::prelude::*;
 use dioxus::prelude::*;
-use fermi::{use_atom_ref, UseAtomRef};
 
-pub fn use_sidebar() -> &UseAtomRef<SidebarManager> {
-    use_atom_ref(&crate::app::SIDEBAR)
+pub fn use_sidebar() -> Signal<SidebarManager> {
+    use_context::<Signal<SidebarManager>>()
 }
 
 #[derive(Default)]
@@ -29,9 +28,9 @@ impl SidebarManager {
 }
 
 pub fn Sidebar() -> Element {
-    let sidebar = use_sidebar();
-    let router = use_router();
-    let local_profile = use_local_profile();
+    let mut sidebar = use_sidebar();
+    let navigator = use_navigator();
+    let mut local_profile = use_local_profile();
 
     let sidebar_width = if sidebar.read().is_open() {
         "w-[var(--sidebar-width)]"
@@ -60,7 +59,7 @@ pub fn Sidebar() -> Element {
         .unwrap_or_else(|| "");
 
     rsx! {
-        Overlay,
+        {Overlay}
         div {
             class: "{sidebar_width} z-[100] fixed top-0 left-0 h-full overflow-x-hidden flex flex-col navbar-bg-color transition-[width] duration-300",
             a {
@@ -68,8 +67,7 @@ pub fn Sidebar() -> Element {
                 onclick: move |_| {
                     sidebar.write().close();
                     if let Some(id) = local_profile.read().user_id {
-                        let url = crate::page::profile_view(id);
-                        router.navigate_to(&url);
+                        navigator.push(crate::page::profile_view(id));
                     }
                 },
                 img {
@@ -81,7 +79,7 @@ pub fn Sidebar() -> Element {
                 class: "sidebar-navlink border-t",
                 onclick: move |_| {
                     sidebar.write().close();
-                    router.navigate_to(page::EDIT_PROFILE);
+                    navigator.push(page::Route::EditProfile {});
                 },
                 "Edit Profile"
             },
@@ -89,7 +87,7 @@ pub fn Sidebar() -> Element {
                 class: "sidebar-navlink",
                 onclick: move |_| {
                     sidebar.write().close();
-                    router.navigate_to(page::HOME_BOOKMARKED);
+                    navigator.push(page::Route::HomeBookmarked {});
                 },
                 "Bookmarks"
             },
@@ -102,7 +100,7 @@ pub fn Sidebar() -> Element {
                     local_profile.write().user_id = None;
                     local_profile.write().image = None;
                     sidebar.write().close();
-                    router.navigate_to(page::LOGIN);
+                    navigator.push(page::Route::Login {});
                 },
                 "Logout"
             },

@@ -1,6 +1,8 @@
 use axum::http::StatusCode;
-use axum::{async_trait, Json};
+use async_trait::async_trait;
+use axum::Json;
 use chrono::{Duration, Utc};
+use signature::SignatureEncoding;
 use tracing::info;
 use url::Url;
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, FollowUser, FollowUserOk, GetMyProfile, GetMyProfileOk, Login, LoginOk, UpdateProfile, UpdateProfileOk, ViewProfile, ViewProfileOk};
@@ -61,8 +63,7 @@ fn generate_session(
 
     let mut rng = state.rng.clone();
     let signature = state.signing_keys.sign(&mut rng, session.id.as_uuid().as_bytes());
-    println!("signature={:?}", signature);
-    let signature = uchat_crypto::encode_base64(signature);
+    let signature = uchat_crypto::encode_base64(signature.to_bytes());
     Ok((session , SessionSignature(signature), session_duration))
 }
 

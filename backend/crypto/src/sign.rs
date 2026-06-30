@@ -1,5 +1,5 @@
-use rand_core::{CryptoRng, Rng};
 use rsa::pss::{BlindedSigningKey, Signature, VerifyingKey};
+use rsa::rand_core::CryptoRngCore;
 use rsa::sha2::Sha256;
 use rsa::signature::{Keypair, RandomizedSigner, Verifier};
 use rsa::RsaPrivateKey;
@@ -21,7 +21,7 @@ pub enum Error {
 
 pub fn new_private_key<R>(rng: &mut R) -> Result<RsaPrivateKey, Error>
 where
-    R: CryptoRng + Rng,
+    R: CryptoRngCore,
 {
     let bits = 2048;
     Ok(RsaPrivateKey::new(rng, bits)?)
@@ -51,7 +51,7 @@ pub struct Keys {
 impl Keys {
     pub fn generate<R>(rng: &mut R) -> Result<(RsaPrivateKey, Self), Error>
     where
-        R: CryptoRng + Rng,
+        R: CryptoRngCore,
     {
         let private_key = new_private_key(rng)?;
         Ok((private_key.clone(), Self::init(private_key)?))
@@ -74,7 +74,7 @@ impl Keys {
 
     pub fn sign<R>(&self, rng: &mut R, data: &[u8]) -> Signature
     where
-        R: CryptoRng + Rng,
+        R: CryptoRngCore,
     {
         self.signing_key.sign_with_rng(rng, data)
     }

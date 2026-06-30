@@ -6,12 +6,19 @@ use crate::prelude::*;
 use crate::util::ApiClient;
 use dioxus::prelude::*;
 use uchat_domain::ids::PostId;
-use uchat_endpoint::post::endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, React, ReactOk};
+use uchat_endpoint::post::endpoint::{
+    Bookmark as BookmarkRequest,
+    BookmarkOk,
+    Boost as BoostRequest,
+    BoostOk,
+    React,
+    ReactOk,
+};
 use uchat_endpoint::post::types::{BookmarkAction, BootsAction, LikeStatus};
 
-#[inline_props]
-pub fn QuickRespondBox(post_id: PostId, opened: UseState<bool>) -> Element {
-    let element = match *opened.get() {
+#[component]
+pub fn QuickRespondBox(post_id: PostId, opened: Signal<bool>) -> Element {
+    let element = match *opened.read() {
         true => {
             to_owned![opened, post_id];
             Some(rsx! {
@@ -22,17 +29,17 @@ pub fn QuickRespondBox(post_id: PostId, opened: UseState<bool>) -> Element {
     };
 
     rsx! {
-        element {}
+        {element}
     }
 }
 
-#[inline_props]
+#[component]
 pub fn Actionbar(post_id: PostId) -> Element {
     let post_manager = use_post_manager();
     let this_post = post_manager.read();
-    let this_post = this_post.get(post_id).unwrap();
+    let this_post = this_post.get(&post_id).unwrap();
     let this_post_id = this_post.id;
-    let quick_respond_opened = use_state(|| false).clone();
+    let quick_respond_opened = use_signal(|| false);
 
     rsx! {
         div { class: "flex flex-row justify-between w-full opacity-70 mt-4",
@@ -55,7 +62,7 @@ pub fn Actionbar(post_id: PostId) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 pub fn Bookmark(post_id: PostId, bookmarked: bool) -> Element {
     let post_manager = use_post_manager();
     let toaster = use_toaster();
@@ -74,7 +81,7 @@ pub fn Bookmark(post_id: PostId, bookmarked: bool) -> Element {
                 false => BookmarkAction::Add,
             };
 
-            let request_data = Bookmark { action, post_id };
+            let request_data = BookmarkRequest { action, post_id };
 
             match fetch_json!(<BookmarkOk>, api_client, request_data) {
                 Ok(res) => {
@@ -97,7 +104,7 @@ pub fn Bookmark(post_id: PostId, bookmarked: bool) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 pub fn LikeDislike(post_id: PostId, like_status: LikeStatus, likes: i64, dislikes: i64) -> Element {
     let post_manager = use_post_manager();
     let toaster = use_toaster();
@@ -161,7 +168,7 @@ pub fn LikeDislike(post_id: PostId, like_status: LikeStatus, likes: i64, dislike
     }
 }
 
-#[inline_props]
+#[component]
 pub fn Boost(post_id: PostId, boosted: bool, boosts: i64) -> Element {
     let post_manager = use_post_manager();
     let toaster = use_toaster();
@@ -180,7 +187,7 @@ pub fn Boost(post_id: PostId, boosted: bool, boosts: i64) -> Element {
                 false => BootsAction::Add,
             };
 
-            let request_data = Boost { action, post_id };
+            let request_data = BoostRequest { action, post_id };
 
             match fetch_json!(<BoostOk>, api_client, request_data) {
                 Ok(res) => {
@@ -201,18 +208,18 @@ pub fn Boost(post_id: PostId, boosted: bool, boosts: i64) -> Element {
         }
     );
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "cursor-pointer", onclick: boost_onclick,
             img { class: "actionbar-icon", src: "{icon}" }
             div { class: "text-center", "{boosts}" }
         }
-    })
+    }
 }
 
-#[inline_props]
-pub fn Comment(opened: UseState<bool>) -> Element {
+#[component]
+pub fn Comment(opened: Signal<bool>) -> Element {
     let comment_onclick = sync_handler!([opened], move |_| {
-        let current = *opened.get();
+        let current = *opened.read();
         opened.set(!current);
     });
 

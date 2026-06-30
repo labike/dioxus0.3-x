@@ -2,12 +2,11 @@
 
 use chrono::{DateTime, Duration, Utc};
 use dioxus::prelude::*;
-use fermi::{use_atom_ref, UseAtomRef};
 use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 
-pub fn use_toaster() -> &UseAtomRef<Toaster> {
-    use_atom_ref(&crate::app::TOASTER)
+pub fn use_toaster() -> Signal<Toaster> {
+    use_context::<Signal<Toaster>>()
 }
 
 pub enum ToastKind {
@@ -74,13 +73,9 @@ impl Toaster {
     }
 }
 
-#[derive(Props)]
-pub struct ToastRootProps {
-    toaster: &UseAtomRef<Toaster>,
-}
-
-pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
-    let toaster = cx.props.toaster;
+#[component]
+pub fn ToastRoot() -> Element {
+    let mut toaster = use_toaster();
 
     let toasts = &toaster.read();
 
@@ -103,15 +98,9 @@ pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
         }
     });
 
-    let total_toasts = &toaster.read().toasts.len();
-
-    let _remove_expired = use_future((total_toasts,), |(_total_toasts,)| {
-        let toaster = toaster.clone();
+    use_future(move || {
         async move {
             while !toaster.read().toasts.is_empty() {
-                // if total_toasts == 0 {
-                //     break;
-                // }
                 let expired_ids = toaster
                     .read()
                     .iter()
@@ -135,7 +124,7 @@ pub fn ToastRoot(cx: Scope<ToastRootProps>) -> Element {
 
     rsx! {
         div { class: "fixed bottom-[var(--navbar-height)] w-screen max-w-[var(--content-max-width)]",
-            div { class: "flex flex-col gap-5 px-5 mb-5", ToastElements {} }
+            div { class: "flex flex-col gap-5 px-5 mb-5", {ToastElements} }
         }
     }
 }

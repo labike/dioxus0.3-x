@@ -77,23 +77,18 @@ pub fn PasswordInput(
 #[component]
 pub fn RegisterLink() -> Element {
     rsx! {
-        Link { class: "link text-center", to: page::REGISTER, "Create Account" }
+        Link { class: "link text-center", to: page::Route::Register {}, "Create Account" }
     }
 }
 
 #[component]
 pub fn Login() -> Element {
     let api_client = ApiClient::global();
-    // let username = use_state(cx, String::new);
-    // let password = use_state(cx, String::new);
-
     let page_state = use_signal(PageState::new);
-    let page_state = use_ref(|| page_state);
-
-    let router = use_router();
+    let navigator = use_navigator();
     let local_profile = use_local_profile();
 
-    let form_onsubmit = async_handler!([api_client, page_state, router, local_profile], move |_|
+    let form_onsubmit = async_handler!([api_client, page_state, navigator, local_profile], move |_|
         async move {
             use uchat_endpoint::user::endpoint::{Login, LoginOk};
 
@@ -103,12 +98,12 @@ pub fn Login() -> Element {
                 Login {
                     username: Username::try_new(
                         page_state.with(
-                            |state| state.username.current().to_string().clone()
+                            |state| state.username.read().to_string()
                         )
                     ).unwrap(),
                     password: Password::try_new(
                         page_state.with(
-                            |state| state.password.current().to_string().clone()
+                            |state| state.password.read().to_string()
                         )
                     ).unwrap(),
                 }
@@ -125,7 +120,7 @@ pub fn Login() -> Element {
 
                     local_profile.write().image = res.profile_image;
                     local_profile.write().user_id = Some(res.user_id);
-                    router.navigate_to(page::HOME)
+                    navigator.push(page::Route::Home {});
                 },
                 Err(e) => {
                     page_state.with_mut(|state| state.server_messages.set("login-fail", e.to_string()))
@@ -137,24 +132,24 @@ pub fn Login() -> Element {
     let username_oninput = sync_handler!(
         [page_state],
         move |ev: FormEvent| {
-            if let Err(e) = uchat_domain::Username::try_new(&ev.value) {
+            if let Err(e) = uchat_domain::Username::try_new(&ev.value()) {
                 page_state.with_mut(|state| state.form_errors.set("用户名错误", e.formatted_error()));
             } else {
                 page_state.with_mut(|state| state.form_errors.remove("用户名错误"));
             };
-            page_state.with_mut(|state| state.username.set(ev.value.clone()));
+            page_state.with_mut(|state| state.username.set(ev.value().clone()));
         }
     );
 
     let password_oninput = sync_handler!(
         [page_state],
         move |ev: FormEvent| {
-            if let Err(e) = uchat_domain::Password::try_new(&ev.value) {
+            if let Err(e) = uchat_domain::Password::try_new(&ev.value()) {
                 page_state.with_mut(|state| state.form_errors.set("密码错误", e.formatted_error()));
             } else {
                 page_state.with_mut(|state| state.form_errors.remove("密码错误"));
             };
-            page_state.with_mut(|state| state.password.set(ev.value.clone()));
+            page_state.with_mut(|state| state.password.set(ev.value().clone()));
         }
     );
 

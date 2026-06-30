@@ -2,13 +2,13 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use password_hash::{PasswordHashString, Salt};
+use password_hash::{Encoding, PasswordHashString};
 use tracing::instrument;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("hash error: {0}")]
-    HashError(#[from] argon2::password_hash::Error),
+    HashError(String),
 
     #[error("password doesn't match")]
     WrongPassword,
@@ -17,20 +17,22 @@ pub enum Error {
 #[instrument(level = "trace", err, skip_all)]
 pub fn hash_password_with_salt<T: AsRef<str>>(
     password: T,
-    salt: Salt<'_>,
+    salt: &SaltString,
 ) -> Result<PasswordHashString, Error> {
     let password = password.as_ref().as_bytes();
-    let salt = SaltString::from_b64(salt.as_ref())?;
 
     let argon2 = Argon2::default();
 
-    Ok(argon2.hash_password(password, &salt)?.serialize())
+    argon2
+        .hash_password(password, salt)
+        .map(|hash| hash.serialize())
+        .map_err(|err| Error::HashError(err.to_string()))
 }
 
 #[tracing::instrument(level = "trace", err, skip_all)]
 pub fn hash_password<T: AsRef<str>>(password: T) -> Result<PasswordHashString, Error> {
     let salt = new_salt();
-    hash_password_with_salt(password, salt.as_salt())
+    hash_password_with_salt(password, &salt)
 }
 
 #[tracing::instrument(level = "debug", err, skip_all)]
@@ -53,21 +55,18 @@ pub fn new_salt() -> SaltString {
 
 #[tracing::instrument(level = "trace", err, skip_all)]
 pub fn deserialize_hash(hash: &str) -> Result<PasswordHash<'_>, Error> {
-    Ok(PasswordHash::parse(hash, password_hash::Encoding::B64)?)
+    PasswordHash::parse(hash, Encoding::B64).map_err(|err| Error::HashError(err.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
-    use password_hash::Encoding;
-
     use super::*;
 
     #[test]
     fn hashes_password_with_salt() {
         let password = "password";
         let salt = new_salt();
-        let hashed =
-            hash_password_with_salt(password, salt.as_salt()).expect("failed to hash password");
+        let hashed = hash_password_with_salt(password, &salt).expect("failed to hash password");
         assert_ne!(hashed.as_str(), password);
         assert_eq!(hashed.encoding(), Encoding::B64);
     }

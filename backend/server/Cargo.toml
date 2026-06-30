@@ -10,6 +10,7 @@ path = "src/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = "0.1.89"
 axum = { version = "0.8.9", features = ["json", "macros"] }
 axum-extra = { version = "0.12", features = ["typed-header"] }
 headers = "0.4"
@@ -19,10 +20,10 @@ clap = { version = "4.6.1", features = ["derive", "env"] }
 color-eyre = "0.6.5"
 dotenvy = "0.15.7"
 hyper = { version = "1.10.1", features = ["full"] }
-rand = "0.10.1"
-rand_core = "0.10.1"
+rand = "0.8.6"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
+signature = "2.2.0"
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["full"] }
 tower = "0.5.3"
@@ -33,7 +34,7 @@ tracing = { version = "0.1.44", features = ["attributes"] }
 tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 url = { version = "2.5.8", features = ["serde"] }
-uuid = { version = "1.23.3", features = ["v4", "serde"] }
+uuid = { version = "1.23.4", features = ["v4", "serde"] }
 
 uchat_cookie = { path = "../../shared/cookie" }
 uchat_crypto = { path = "../crypto" }

@@ -11,13 +11,13 @@ fn can_submit(message: &str) -> bool {
     message.len() <= Message::MAX_CHARS && !message.is_empty()
 }
 
-#[inline_props]
-pub fn MessageInput(message: &str, on_input: EventHandler<FormEvent>) -> Element {
+#[component]
+pub fn MessageInput(message: String, on_input: EventHandler<FormEvent>) -> Element {
     let max_chars = Message::MAX_CHARS;
 
     let wrong_len = maybe_class!("err-text-color", !can_submit(message));
 
-    cx.render(rsx! {
+    rsx! {
         div { class: "flex flex-row relative",
             textarea {
                 class: "input-field",
@@ -30,15 +30,15 @@ pub fn MessageInput(message: &str, on_input: EventHandler<FormEvent>) -> Element
                 "{message.len()}/{max_chars}"
             }
         }
-    })
+    }
 }
 
-#[inline_props]
-pub fn QuickRespond(opened: UseState<bool>) -> Element {
+#[component]
+pub fn QuickRespond(opened: Signal<bool>) -> Element {
     let api_client = ApiClient::global();
     let toaster = use_toaster();
 
-    let message = use_state(|| "".to_string());
+    let message = use_signal(String::new);
 
     let form_onsubmit = async_handler!(
         [api_client, toaster, message, opened],
@@ -69,25 +69,25 @@ pub fn QuickRespond(opened: UseState<bool>) -> Element {
         }
     );
 
-    let submit_cursor = if can_submit(message.get()) {
+    let submit_cursor = if can_submit(&message.read()) {
         "cursor-pointer"
     } else {
         "cursor-not-allowed"
     };
 
-    let submit_btn_style = maybe_class!("btn-disabled", !can_submit(message.get()));
+    let submit_btn_style = maybe_class!("btn-disabled", !can_submit(&message.read()));
 
     rsx! {
         form { onsubmit: form_onsubmit, prevent_default: "onsubmit",
             div { class: "w-full flex flex-col justify-end",
                 MessageInput {
-                    message,
+                    message: message.read().clone(),
                     on_input: move |ev: FormEvent| { message.set(ev.value.clone()) },
                 }
                 button {
                     class: "mt-2 btn {submit_cursor} {submit_btn_style} w-[80px] h-[30px] flex justify-center items-center self-end",
                     r#type: "submit",
-                    disabled: !can_submit(message.get()),
+                    disabled: !can_submit(&message.read()),
                     "Respond"
                 }
             }

@@ -5,7 +5,9 @@ pub mod sign;
 pub use password::{hash_password, verify_password};
 
 pub fn new_rng() -> rand::rngs::StdRng {
-    rand_core::SeedableRng::from_entropy()
+    use rand::SeedableRng;
+
+    rand::rngs::StdRng::from_entropy()
 }
 
 pub fn encode_base64<T: AsRef<[u8]>>(data: T) -> String {

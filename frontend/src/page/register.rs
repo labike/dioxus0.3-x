@@ -25,8 +25,8 @@ impl PageState {
 
     pub fn can_submit(&self) -> bool {
         !(self.form_errors.has_messages()
-            || self.username.current().is_empty()
-            || self.password.current().is_empty())
+            || self.username.read().is_empty()
+            || self.password.read().is_empty())
     }
 }
 
@@ -68,35 +68,30 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
 #[component]
 pub fn LoginLink() -> Element {
     rsx! {
-        Link { class: "link text-center", to: page::LOGIN, "Existing User Login" }
+        Link { class: "link text-center", to: page::Route::Login {}, "Existing User Login" }
     }
 }
 
 #[component]
 pub fn Register() -> Element {
     let api_client = ApiClient::global();
-    // let username = use_state(cx, String::new);
-    // let password = use_state(cx, String::new);
-
     let page_state = use_signal(PageState::new);
-    let page_state = use_ref(|| page_state);
-
-    let router = use_router();
+    let navigator = use_navigator();
     let local_profile = use_local_profile();
 
     let form_onsubmit = async_handler!(
-        [api_client, page_state, router, local_profile],
+        [api_client, page_state, navigator, local_profile],
         move |_| async move {
             use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
             let request_data = {
                 use uchat_domain::{Password, Username};
                 CreateUser {
                     username: Username::try_new(
-                        page_state.with(|state| state.username.current().to_string()),
+                        page_state.with(|state| state.username.read().to_string()),
                     )
                     .unwrap(),
                     password: Password::try_new(
-                        page_state.with(|state| state.password.current().to_string()),
+                        page_state.with(|state| state.password.read().to_string()),
                     )
                     .unwrap(),
                 }
@@ -111,7 +106,7 @@ pub fn Register() -> Element {
                     );
 
                     local_profile.write().user_id = Some(res.user_id);
-                    router.navigate_to(page::HOME)
+                    navigator.push(page::Route::Home {});
                 }
                 Err(_e) => (),
             }
@@ -119,21 +114,21 @@ pub fn Register() -> Element {
     );
 
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        if let Err(e) = uchat_domain::Username::try_new(&ev.value) {
+        if let Err(e) = uchat_domain::Username::try_new(&ev.value()) {
             page_state.with_mut(|state| state.form_errors.set("用户名错误", e.formatted_error()));
         } else {
             page_state.with_mut(|state| state.form_errors.remove("用户名错误"));
         };
-        page_state.with_mut(|state| state.username.set(ev.value.clone()));
+        page_state.with_mut(|state| state.username.set(ev.value().clone()));
     });
 
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        if let Err(e) = uchat_domain::Password::try_new(&ev.value) {
+        if let Err(e) = uchat_domain::Password::try_new(&ev.value()) {
             page_state.with_mut(|state| state.form_errors.set("密码错误", e.formatted_error()));
         } else {
             page_state.with_mut(|state| state.form_errors.remove("密码错误"));
         };
-        page_state.with_mut(|state| state.password.set(ev.value.clone()));
+        page_state.with_mut(|state| state.password.set(ev.value().clone()));
     });
 
     let submit_btn_style =

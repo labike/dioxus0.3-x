@@ -15,7 +15,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn connect(&self) -> Result<AsyncConnection<'_>, QueryError> {
+    pub async fn connect(&self) -> Result<AsyncConnection, QueryError> {
         self.db_pool.get().await
     }
 }
@@ -23,7 +23,7 @@ impl AppState {
 pub mod cli {
     use color_eyre::eyre::Context;
     use color_eyre::Help;
-    use rand_core::{CryptoRng, RngCore};
+    use rand::{CryptoRng, RngCore};
     use uchat_crypto::sign::{encode_private_key, EncodedPrivateKey, Keys};
 
     pub fn gen_keys<R>(rng: &mut R) -> color_eyre::Result<(EncodedPrivateKey, Keys)>

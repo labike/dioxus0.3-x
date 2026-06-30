@@ -77,13 +77,13 @@ async fn run () -> Result<()> {
     };
     info!(target: "uchat_server", bind_addr = %args.bind);
     let router = uchat_server::router::new_router(state);
-    let server = axum::Server::try_bind(&args.bind)
+    let listener = tokio::net::TcpListener::bind(args.bind)
+        .await
         .wrap_err_with(|| "server initialzation error")
         .with_suggestion(|| "check bind address")
         .with_suggestion(|| "check if other services are using the same port")?;
-    let server = server.serve(router.into_make_service());
     info!(target: "uchat_server", "listening");
-    if let Err(e) = server.await {
+    if let Err(e) = axum::serve(listener, router.into_make_service()).await {
         error!(target: "uchat_server", server_error = %e)
     }
 

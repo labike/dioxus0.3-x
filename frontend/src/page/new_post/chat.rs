@@ -6,7 +6,6 @@ use crate::util::ApiClient;
 use crate::{async_handler, fetch_json, maybe_class, page};
 use chrono::Duration;
 use dioxus::prelude::*;
-use dioxus_router::use_router;
 use serde::{Deserialize, Serialize};
 use uchat_domain::post::{Heading, Message};
 use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
@@ -34,8 +33,8 @@ impl PageState {
     }
 }
 
-#[inline_props]
-pub fn MessageInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn MessageInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::post::Message;
 
     let max_chars = Message::MAX_CHARS;
@@ -61,14 +60,14 @@ pub fn MessageInput(page_state: UseRef<PageState>) -> Element {
                 id: "message",
                 rows: 5,
                 value: "{page_state.read().message}",
-                oninput: move |ev| { page_state.with_mut(|state| state.message = ev.data.value.clone()) },
+                oninput: move |ev| page_state.with_mut(|state| state.message = ev.value().clone()),
             }
         }
     }
 }
 
-#[inline_props]
-pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn HeadingInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::post::Heading;
 
     let max_chars = Heading::MAX_CHARS;
@@ -92,23 +91,24 @@ pub fn HeadingInput(page_state: UseRef<PageState>) -> Element {
                 class: "input-field",
                 id: "heading",
                 value: "{page_state.read().heading}",
-                oninput: move |ev| { page_state.with_mut(|state| state.heading = ev.data.value.clone()) },
+                oninput: move |ev| page_state.with_mut(|state| state.heading = ev.value().clone()),
             }
         }
     }
 }
 
+#[component]
 pub fn NewChat() -> Element {
     let api_client = ApiClient::global();
-    let router = use_router();
+    let navigator = use_navigator();
     let toaster = use_toaster();
 
-    let page_state = use_ref(PageState::default);
+    let page_state = use_signal(PageState::default);
 
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     let form_onsubmit = async_handler!(
-        [api_client, page_state, toaster, router],
+        [api_client, page_state, toaster, navigator],
         move |_| async move {
             let request_data = NewPost {
                 content: Chat {
@@ -132,7 +132,7 @@ pub fn NewChat() -> Element {
                 Ok(_) => {
                     toaster.write().success("Posted!", Duration::seconds(3));
                     // 禁止返回post
-                    router.replace_route(page::HOME, None, None);
+                    navigator.replace(page::Route::Home {});
                 }
                 Err(e) => {
                     toaster
@@ -154,19 +154,19 @@ pub fn NewChat() -> Element {
                 append_class: app_bar::BUTTON_SELECTED,
             }
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_IMAGE, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewImage {}),
                 img: "/static/icons/icon-image.svg",
                 label: "Image",
                 title: "Post a new image",
             }
             AppbarImgButton {
-                click_handler: move |_| router.replace_route(page::POST_NEW_POLL, None, None),
+                click_handler: move |_| navigator.replace(page::Route::NewPoll {}),
                 img: "/static/icons/icon-poll.svg",
                 label: "Poll",
                 title: "Post a new poll",
             }
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",

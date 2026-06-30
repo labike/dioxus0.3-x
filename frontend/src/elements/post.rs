@@ -3,10 +3,8 @@
 use crate::elements::post::action_bar::Actionbar;
 use crate::elements::post::content::Content;
 use crate::sync_handler;
-use dioxus::core::ScopeState;
 use dioxus::prelude::*;
-use dioxus_router::{use_router, RouterContext};
-use fermi::{use_atom_ref, UseAtomRef};
+use dioxus_router::Navigator;
 use indexmap::IndexMap;
 use uchat_domain::ids::{PostId, UserId};
 use uchat_endpoint::post::types::PublicPost;
@@ -15,8 +13,8 @@ pub mod action_bar;
 pub mod content;
 pub mod quick_respond;
 
-pub fn use_post_manager() -> &UseAtomRef<PostManager> {
-    use_atom_ref(crate::app::POSTMANAGER)
+pub fn use_post_manager() -> Signal<PostManager> {
+    use_context::<Signal<PostManager>>()
 }
 
 #[derive(Default)]
@@ -61,7 +59,7 @@ impl PostManager {
         self.posts.swap_remove(post_id);
     }
 
-    pub fn all_to_public<'a, 'b>(&self) -> Vec<LazyNodes<'a, 'b>> {
+    pub fn all_to_public(&self) -> Vec<Element> {
         self.posts
             .iter()
             .map(|(&id, _)| {
@@ -76,18 +74,17 @@ impl PostManager {
 }
 
 pub fn view_profile_onclick(
-    router: &RouterContext,
+    navigator: Navigator,
     user_id: UserId,
-) -> impl FnMut(MouseEvent) + '_ {
-    sync_handler!([router], move |_| {
-        let route = crate::page::route::profile_view(user_id);
-        router.navigate_to(&route);
+) -> impl FnMut(MouseEvent) {
+    sync_handler!([navigator], move |_| {
+        navigator.push(crate::page::profile_view(user_id));
     })
 }
 
-#[inline_props]
-pub fn ProfileImage(post: &PublicPost) -> Element {
-    let router = use_router();
+#[component]
+pub fn ProfileImage(post: PublicPost) -> Element {
+    let navigator = use_navigator();
     let poster_info = &post.by_user;
     let profile_img_src = &poster_info
         .profile_image
@@ -98,14 +95,14 @@ pub fn ProfileImage(post: &PublicPost) -> Element {
     rsx! {
         img {
             class: "profile-portrait cursor-pointer",
-            onclick: view_profile_onclick(router, post.by_user.id),
+            onclick: view_profile_onclick(navigator, post.by_user.id),
             src: "{profile_img_src}",
         }
     }
 }
 
-#[inline_props]
-pub fn Header(post: &PublicPost) -> Element {
+#[component]
+pub fn Header(post: PublicPost) -> Element {
     let (post_date, post_time) = {
         let date = post.time_posted.format("%Y-%m-%d");
         let time = post.time_posted.format("%H-%M-%S");
@@ -133,25 +130,24 @@ pub fn Header(post: &PublicPost) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 pub fn PublicPostEntry(post_id: PostId) -> Element {
     let post_manager = use_post_manager();
-    let _router = use_router();
 
     let this_post = {
-        let post = post_manager.read().get(post_id).unwrap().clone();
-        use_state(|| post)
+        let post = post_manager.read().get(&post_id).unwrap().clone();
+        use_signal(|| post)
     };
 
     rsx! {
         div {
-            key: "{this_post.id.to_string()}",
+            key: "{this_post.read().id.to_string()}",
             class: "grid grid-cols[50px_1fr] gap-1 mb-4",
-            ProfileImage { post: this_post }
+            ProfileImage { post: this_post.read().clone() }
             div { class: "flex flex-col gap-3",
-                Header { post: this_post }
-                Content { post: this_post }
-                Actionbar { post_id: this_post.id }
+                Header { post: this_post.read().clone() }
+                Content { post: this_post.read().clone() }
+                Actionbar { post_id: this_post.read().id }
                 hr {}
             }
         }

@@ -25,8 +25,8 @@ pub struct PageState {
     profile_image: Option<PreviewImageData>,
 }
 
-#[inline_props]
-pub fn ImageInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn ImageInput(page_state: Signal<PageState>) -> Element {
     let toaster = use_toaster();
 
     rsx! {
@@ -71,8 +71,8 @@ pub fn ImageInput(page_state: UseRef<PageState>) -> Element {
     }
 }
 
-#[inline_props]
-pub fn EmailInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn EmailInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::user::Email;
 
     rsx! {
@@ -110,8 +110,8 @@ pub fn EmailInput(page_state: UseRef<PageState>) -> Element {
     }
 }
 
-#[inline_props]
-pub fn DisplayNameInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn DisplayNameInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::user::DisplayName;
 
     let max_chars = DisplayName::MAX_CHARS;
@@ -157,8 +157,8 @@ pub fn DisplayNameInput(page_state: UseRef<PageState>) -> Element {
     }
 }
 
-#[inline_props]
-pub fn ImagePreview(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
     let image_data = page_state.with(|state| state.profile_image.clone());
 
     let img_el = |img_src| {
@@ -180,8 +180,8 @@ pub fn ImagePreview(page_state: UseRef<PageState>) -> Element {
     }
 }
 
-#[inline_props]
-pub fn PasswordInput(page_state: UseRef<PageState>) -> Element {
+#[component]
+pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
     use uchat_domain::user::Password;
 
     let check_password_mismatch = move || {
@@ -251,9 +251,10 @@ pub fn PasswordInput(page_state: UseRef<PageState>) -> Element {
     }
 }
 
+#[component]
 pub fn EditProfile() -> Element {
-    let page_state = use_ref(PageState::default);
-    let router = use_router();
+    let page_state = use_signal(PageState::default);
+    let navigator = use_navigator();
     let api_client = ApiClient::global();
     let toaster = use_toaster();
     let local_profile = use_local_profile();
@@ -261,9 +262,10 @@ pub fn EditProfile() -> Element {
     let disabled_submit = page_state.with(|state| state.form_errors.has_messages());
     let submit_btn_style = maybe_class!("btn-disabled", disabled_submit);
 
-    let _fetch_profile = {
-        to_owned![api_client, toaster, page_state];
-        use_future((), |_| async move {
+    use_future(move || {
+        let toaster = toaster.clone();
+        let page_state = page_state.clone();
+        async move {
             toaster
                 .write()
                 .info("Retrieving profile ...", chrono::Duration::seconds(3));
@@ -284,11 +286,11 @@ pub fn EditProfile() -> Element {
                     chrono::Duration::seconds(3),
                 ),
             }
-        })
-    };
+        }
+    });
 
     let form_onsubmit = async_handler!(
-        [api_client, page_state, router, toaster, local_profile],
+        [api_client, page_state, navigator, toaster, local_profile],
         move |_| async move {
             use uchat_endpoint::user::endpoint::{UpdateProfile, UpdateProfileOk};
             use uchat_endpoint::Update;
@@ -338,7 +340,7 @@ pub fn EditProfile() -> Element {
                         .write()
                         .success("profile updated", chrono::Duration::seconds(3));
                     local_profile.write().image = res.profile_image;
-                    router.navigate_to(crate::page::HOME)
+                    navigator.push(crate::page::Route::Home {})
                 }
                 Err(e) => {
                     toaster.write().error(
@@ -353,7 +355,7 @@ pub fn EditProfile() -> Element {
     rsx! {
         Appbar { title: "Edit Profile",
             AppbarImgButton {
-                click_handler: move |_| router.pop_route(),
+                click_handler: move |_| navigator.go_back(),
                 img: "/static/icons/icon-back.svg",
                 label: "Back",
                 title: "Go to the previous page",
@@ -373,7 +375,7 @@ pub fn EditProfile() -> Element {
                 button {
                     class: "btn",
                     prevent_default: "onclick",
-                    onclick: move |_| router.pop_route(),
+                    onclick: move |_| navigator.go_back(),
                     "Cancel"
                 }
                 button {

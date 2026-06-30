@@ -33,28 +33,29 @@ impl KeyedNotifications {
     }
 }
 
-#[derive(PartialEq, Props)]
+#[derive(Clone, PartialEq, Props)]
 pub struct KeyedNotificationsProps {
-    legend: Option<&str>,
+    legend: Option<String>,
     notifications: KeyedNotifications,
 }
 
-pub fn KeyedNotificationBox(cx: Scope<KeyedNotificationsProps>) -> Element {
-    let notifications = cx.props.notifications.messages().map(|msg| {
+#[component]
+pub fn KeyedNotificationBox(props: KeyedNotificationsProps) -> Element {
+    let notifications = props.notifications.messages().map(|msg| {
         rsx! {
             li { "{msg}" }
         }
-    });
+    }).collect::<Vec<_>>();
 
-    let legend = cx.props.legend.unwrap_or("Errors");
+    let legend = props.legend.unwrap_or_else(|| "Errors".to_string());
 
-    match cx.props.notifications.has_messages() {
+    match props.notifications.has_messages() {
         true => rsx! {
             fieldset { class: "fieldset border-red-300 rounded",
                 legend { class: "bg-red-300 px-4", "{legend}" }
-                ul { class: "list-disc ml-4", notifications }
+                ul { class: "list-disc ml-4", for notification in notifications { {notification} } }
             }
         },
-        false => None,
+        false => rsx! { span {} },
     }
 }
