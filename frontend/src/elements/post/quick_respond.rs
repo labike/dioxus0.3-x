@@ -78,7 +78,10 @@ pub fn QuickRespond(opened: Signal<bool>) -> Element {
     let submit_btn_style = maybe_class!("btn-disabled", !can_submit(&message.read()));
 
     rsx! {
-        form { onsubmit: form_onsubmit, prevent_default: "onsubmit",
+        form { onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
             div { class: "w-full flex flex-col justify-end",
                 MessageInput {
                     message: message.read().clone(),

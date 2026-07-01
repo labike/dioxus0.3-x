@@ -163,8 +163,10 @@ pub fn Login() -> Element {
     rsx! {
         form {
             class: "flex flex-col gap-5",
-            prevent_default: "onsubmit",
-            onsubmit: form_onsubmit,
+            onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
 
             KeyedNotificationBox {
                 legend: "Login Errors",

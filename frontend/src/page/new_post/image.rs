@@ -206,8 +206,10 @@ pub fn NewImage() -> Element {
         }
         form {
             class: "flex flex-col gap-4",
-            onsubmit: form_onsubmit,
-            prevent_default: "onsubmit",
+            onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
             ImageInput { page_state: page_state.clone() }
             ImagePreview { page_state: page_state.clone() }
             CaptionInput { page_state: page_state.clone() }

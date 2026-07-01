@@ -174,8 +174,10 @@ pub fn NewChat() -> Element {
         }
         form {
             class: "flex flex-col gap-4",
-            onsubmit: form_onsubmit,
-            prevent_default: "onsubmit",
+            onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
             MessageInput { page_state: page_state.clone() }
             HeadingInput { page_state: page_state.clone() }
             button {

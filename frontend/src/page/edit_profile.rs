@@ -363,8 +363,10 @@ pub fn EditProfile() -> Element {
         }
         form {
             class: "flex flex-col w-full gap-3",
-            onsubmit: form_onsubmit,
-            prevent_default: "onsubmit",
+            onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
             ImagePreview { page_state: page_state.clone() }
             ImageInput { page_state: page_state.clone() }
             DisplayNameInput { page_state: page_state.clone() }
@@ -374,7 +376,7 @@ pub fn EditProfile() -> Element {
             div { class: "flex flex-row justify-end gap-3",
                 button {
                     class: "btn",
-                    prevent_default: "onclick",
+                    r#type: "button",
                     onclick: move |_| navigator.go_back(),
                     "Cancel"
                 }

@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::prelude::*;
 use crate::{maybe_class, page};
 use dioxus::prelude::*;
 

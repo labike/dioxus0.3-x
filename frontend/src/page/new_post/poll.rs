@@ -132,7 +132,7 @@ pub fn PollChoices(page_state: Signal<PageState>) -> Element {
                     },
                     button {
                         class: "btn py-0 px-2 h-full bg-red-700",
-                        prevent_default: "onclick",
+                        r#type: "button",
                         onclick: move |_| {
                             page_state.with_mut(|state| state.poll_choices.remove(&key));
                         },
@@ -155,7 +155,7 @@ pub fn PollChoices(page_state: Signal<PageState>) -> Element {
                 class: "flex flex-row justify-end",
                 button {
                     class: "btn w-12",
-                    prevent_default: "onclick",
+                    r#type: "button",
                     onclick: move |_| {
                         page_state.with_mut(|state| state.push_choice(""))
                     },
@@ -281,8 +281,10 @@ pub fn NewPoll() -> Element {
         }
         form {
             class: "flex flex-col gap-4",
-            onsubmit: form_onsubmit,
-            prevent_default: "onsubmit",
+            onsubmit: move |evt| {
+                evt.prevent_default();
+                form_onsubmit(evt);
+            },
             HeadingInput {
                 page_state: page_state.clone(),
             },
