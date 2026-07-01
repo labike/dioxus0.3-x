@@ -53,7 +53,7 @@ enum InstallStatus {
 }
 
 fn install(mut spinner: Spinner, mut cmd: Command, dep: &str) -> InstallStatus {
-    fn fail(spinner: Spinner, dep: &str) {
+    fn fail(mut spinner: Spinner, dep: &str) {
         spinner.fail(&format!("Install  {:.<20}{}", dep, "failed".red()));
     }
 
@@ -185,7 +185,7 @@ fn main() {
             LocateStatus::NotFound => {
                 println!("{}", "not found".red());
                 for instruction in dep.install {
-                    let spinner = Spinner::new(spinners::Dots, "", Color::Blue);
+                    let mut spinner = Spinner::new(spinners::Dots, "", Color::Blue);
                     match instruction {
                         Install::Cmd(cmd) => match install(spinner, cmd, dep.name) {
                             InstallStatus::Ok => (),
