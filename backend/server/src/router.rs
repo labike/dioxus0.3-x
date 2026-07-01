@@ -24,7 +24,7 @@ pub fn new_router(state: AppState) -> axum::Router {
     };
     let public_routes = Router::new()
         .route("/", get(|| async { "this is the root page!" }))
-        .route(&format!("/{img_route}:id"), get(handler::load_image))
+        .route(&format!("/{img_route}{{id}}"), get(handler::load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
     let authorized_routes = Router::new()
